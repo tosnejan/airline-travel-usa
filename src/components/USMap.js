@@ -50,7 +50,7 @@ class USMap extends React.Component {
               .translate(width / 2, height / 2)
               .scale(
                 Math.min(
-                  8,
+                  2,
                   0.9 / Math.max((x1 - x0) / width, (y1 - y0) / height)
                 )
               )
