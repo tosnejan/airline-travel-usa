@@ -16,15 +16,49 @@ class USMap extends React.Component {
   }
 
   componentDidMount() {
+    const { width, height } = this.state;
     const g = this.svg.append("g");
+
+    this.zoom = d3
+      .zoom()
+      .scaleExtent([1, 8])
+      .on("zoom", (event) => {
+        const { transform } = event;
+        g.attr("transform", transform);
+        g.attr("stroke-width", 1 / transform.k);
+      });
 
     const states = g
       .append("g")
+      .attr("id", "us-states")
       .attr("fill", "#444")
       .attr("cursor", "pointer")
       .selectAll("path")
       .data(topojson.feature(us, us.objects.states).features)
       .join("path")
+      .on("click", (e, d) => {
+        const [[x0, y0], [x1, y1]] = path.bounds(d);
+        e.stopPropagation();
+        states.transition().style("fill", null);
+        d3.select(e.target).transition().style("fill", "red");
+        this.svg
+          .transition()
+          .duration(750)
+          .call(
+            this.zoom.transform,
+            d3.zoomIdentity
+              .translate(width / 2, height / 2)
+              .scale(
+                Math.min(
+                  8,
+                  0.9 / Math.max((x1 - x0) / width, (y1 - y0) / height)
+                )
+              )
+              .translate(-(x0 + x1) / 2, -(y0 + y1) / 2),
+            d3.pointer(e, this.svg.node())
+          );
+      })
+      .attr("id", (d) => d.properties.name)
       .attr("d", path);
 
     states.append("title").text((d) => d.properties.name);
@@ -34,7 +68,22 @@ class USMap extends React.Component {
       .attr("stroke", "white")
       .attr("stroke-linejoin", "round")
       .attr("d", path(topojson.mesh(us, us.objects.states, (a, b) => a !== b)));
+
+    this.svg.call(this.zoom);
   }
+
+  reset = () => {
+    const { width, height } = this.state;
+    d3.select("us-states").transition().style("fill", null);
+    this.svg
+      .transition()
+      .duration(750)
+      .call(
+        this.zoom.transform,
+        d3.zoomIdentity,
+        d3.zoomTransform(this.svg.node()).invert([width / 2, height / 2])
+      );
+  };
 
   render() {
     const { width, height } = this.state;
@@ -43,6 +92,7 @@ class USMap extends React.Component {
         width={width}
         height={height}
         ref={(element) => (this.svg = d3.select(element))}
+        onClick={this.reset}
       ></svg>
     );
   }
