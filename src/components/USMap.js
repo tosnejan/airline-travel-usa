@@ -12,6 +12,7 @@ class USMap extends React.Component {
       width: props.width || 975,
       height: props.height || 610,
       svg: null,
+      selectedState: null,
     };
   }
 
@@ -37,10 +38,20 @@ class USMap extends React.Component {
       .data(topojson.feature(us, us.objects.states).features)
       .join("path")
       .on("click", (e, d) => {
-        const [[x0, y0], [x1, y1]] = path.bounds(d);
+        const {selectedState} = this.state
+        
         e.stopPropagation();
-        states.transition().style("fill", null);
+
+        if(selectedState === d.properties.name){
+          return this.reset()
+        } else 
+          d3.select(`#${selectedState}`).transition().style("fill", null);
+
+        this.setState({selectedState: d.properties.name})
+        
         d3.select(e.target).transition().style("fill", "red");
+
+        const [[x0, y0], [x1, y1]] = path.bounds(d);
         this.svg
           .transition()
           .duration(750)
@@ -73,8 +84,9 @@ class USMap extends React.Component {
   }
 
   reset = () => {
-    const { width, height } = this.state;
-    d3.select("us-states").transition().style("fill", null);
+    const { width, height, selectedState } = this.state;
+    d3.select(`#${selectedState}`).transition().style("fill", null);
+    this.setState({selectedState: null})
     this.svg
       .transition()
       .duration(750)
