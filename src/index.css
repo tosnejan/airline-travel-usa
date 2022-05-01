@@ -14,8 +14,8 @@ code {
 }
 
 .us-map path {
-  fill: #aaa;
-  stroke: #fff;
+  fill: rgb(148, 148, 148);
+  stroke: rgb(180, 180, 180);
 }
 
 .us-map circle {
