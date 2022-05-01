@@ -1,5 +1,6 @@
 body {
   margin: 0;
+  background-color: rgb(43, 43, 43);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
@@ -18,5 +19,10 @@ code {
 }
 
 .us-map circle {
-  fill: rgb(98, 113, 138);
+  fill: rgb(38, 92, 184);
+}
+
+.us-map line {
+  stroke: rgb(255, 255, 255);
+  stroke-width: 0.5;
 }

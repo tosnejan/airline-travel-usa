@@ -30,6 +30,8 @@ class USMap extends React.Component {
     const airtravelDoc = parser.parseFromString(airtravel, "text/xml")
     
     const airportsData = []
+    const routesData = []
+
     const airportsElements = airtravelDoc.getElementsByTagName("node")
     const routesElements= airtravelDoc.getElementsByTagName("edge")
     
@@ -47,11 +49,21 @@ class USMap extends React.Component {
       const B = parseInt(route.getAttribute("target"))
       airportsData[A].size++;
       airportsData[B].size++;
+      routesData.push({source: airportsData[A].position, target: airportsData[B].position})
     }
-    console.log(airportsData)
 
     const g = this.svg.selectChild()
-    console.log(g)
+
+    g.append("g")
+      .attr("id", "routes")
+      .selectAll("line")
+      .data(routesData)
+      .enter().append("line")
+      .attr("x1", (d) => d.source[0])
+      .attr("y1", (d) => d.source[1])
+      .attr("x2", (d) => d.target[0])
+      .attr("y2", (d) => d.target[1])
+
     const airports = g
       .append("g")
       .attr("id", "airports")
