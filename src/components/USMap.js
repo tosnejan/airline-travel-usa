@@ -35,14 +35,14 @@ class USMap extends React.Component {
     const airportsElements = airtravelDoc.getElementsByTagName("node")
     const routesElements= airtravelDoc.getElementsByTagName("edge")
     
-    for (var i = 0; i < airportsElements.length; i++) {
+    for (let i = 0; i < airportsElements.length; i++) {
       const airport = airportsElements[i]
       const x = parseFloat(airport.querySelector('[key="x"]').innerHTML)*0.1
       const y = parseFloat(airport.querySelector('[key="y"]').innerHTML)*(-0.1)
       const code = airport.querySelector('[key="tooltip"]').innerHTML.substring(0,3)
       airportsData.push({ position: projection([x,y],), code, size: 0 })
     }
-    for (var i = 0; i < routesElements.length; i++) {
+    for (let i = 0; i < routesElements.length; i++) {
       const route = routesElements[i]
       route.getAttribute("source")
       const A = parseInt(route.getAttribute("source"))
