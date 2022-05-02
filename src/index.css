@@ -1,6 +1,5 @@
 body {
   margin: 0;
-  background-color: rgb(43, 43, 43);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
@@ -8,9 +7,41 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+html, body, #root {
+  height: 100%
+}
+
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+.navbar {
+  width: 100%;
+  height: 40px;
+  background-color: rgb(148, 148, 148);
+}
+
+.page {
+  position: absolute;
+  width: 100%;
+  height: calc(100% - 40px);
+  top: 40px;
+  background-color: rgb(43, 43, 43);
+}
+
+.sidebar{
+  position: absolute;
+  width: 200px;
+  height: 100%;
+  background-color: rgb(180, 180, 180);
+}
+
+.us-map {
+  position: absolute;
+  left: 200px;
+  width: calc(100% - 200px);
+  height: 100%;
 }
 
 .us-map path {

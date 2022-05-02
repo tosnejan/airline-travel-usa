@@ -11,17 +11,8 @@ class USMap extends React.Component {
     super(props);
     this.state = {
       selectedState: null,
-      width: window.innerWidth-5,
-      height: window.innerHeight-5,
     };
     this.svg = null
-  }
-
-  setSize = () => {
-    this.setState({
-      width: window.innerWidth-5,
-      height: window.innerHeight-5,
-    })
   }
 
   parseAirportData = async (data) => {
@@ -110,11 +101,13 @@ class USMap extends React.Component {
       .attr("d", geoGenerator);
 
     states.append("title").text((d) => d.properties.name);
+    
+    const map = document.querySelector('#us-map')
+    const {x, y, width: wBB, height: hBB } = map.getBBox()
+    const {width, height} = getComputedStyle(map)
 
-    const {x, y, width, height} = document.querySelector('#us-map').getBBox()
-
-    const offsetX = -x + (this.state.width - width)/2;
-    const offsetY = -y + (this.state.height - height)/2;
+    const offsetX = -x + (parseInt(width.replace('px', '')) - wBB)/2;
+    const offsetY = -y + (parseInt(height.replace('px', ''))  - hBB)/2;
 
     this.svg.call(this.zoom).call(this.zoom.transform, d3.zoomIdentity.translate(offsetX, offsetY));
 
@@ -126,8 +119,6 @@ class USMap extends React.Component {
       <svg
         id="us-map"
         className="us-map"
-        width={this.state.width}
-        height={this.state.height}
         ref={(element) => (this.svg = d3.select(element))}
       ></svg>
     );

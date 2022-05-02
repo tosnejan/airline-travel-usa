@@ -1,9 +1,13 @@
 import { Component } from "react";
+import Sidebar from "../components/Sidebar";
 import USMap from "../components/USMap";
 
 class MainContainer extends Component {
   render() {
-    return <USMap/>;
+    return (<div className="page">
+      <Sidebar />
+      <USMap />
+    </div>);
   }
 }
 
