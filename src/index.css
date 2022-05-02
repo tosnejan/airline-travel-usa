@@ -19,10 +19,9 @@ code {
 }
 
 .us-map circle {
-  fill: rgb(38, 92, 184);
+  stroke-width: 1;
 }
 
 .us-map line {
-  stroke: rgb(255, 255, 255);
   stroke-width: 0.5;
 }

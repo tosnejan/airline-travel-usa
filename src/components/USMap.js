@@ -1,6 +1,7 @@
 import React from "react";
 import * as d3 from "d3";
 import us from "../data/us.json";
+import { difference, dot, size } from "../utils";
 
 const projection = d3.geoConicConformal().scale(1600).rotate([109, 5]);
 const geoGenerator = d3.geoPath().projection(projection);
@@ -21,7 +22,6 @@ class USMap extends React.Component {
       width: window.innerWidth-5,
       height: window.innerHeight-5,
     })
-
   }
 
   parseAirportData = async (data) => {
@@ -42,6 +42,7 @@ class USMap extends React.Component {
       const code = airport.querySelector('[key="tooltip"]').innerHTML.substring(0,3)
       airportsData.push({ position: projection([x,y],), code, size: 0 })
     }
+    let maxSize = 0
     for (let i = 0; i < routesElements.length; i++) {
       const route = routesElements[i]
       route.getAttribute("source")
@@ -50,27 +51,35 @@ class USMap extends React.Component {
       airportsData[A].size++;
       airportsData[B].size++;
       routesData.push({source: airportsData[A].position, target: airportsData[B].position})
+      maxSize = Math.max(A, B, maxSize)
     }
 
-    const g = this.svg.selectChild()
+    const root = this.svg.selectChild()
 
-    g.append("g")
+    root.append("g")
       .attr("id", "routes")
       .selectAll("line")
       .data(routesData)
-      .enter().append("line")
+      .join("line")
+      .attr("stroke", (d) => {
+        const dir = difference(d.target, d.source)
+        const i = (1 + dot(dir , [1, 0])/size(dir))/2
+        return d3.interpolateRainbow(i)
+      })
       .attr("x1", (d) => d.source[0])
       .attr("y1", (d) => d.source[1])
       .attr("x2", (d) => d.target[0])
       .attr("y2", (d) => d.target[1])
+      
 
-    const airports = g
+    const airports = root
       .append("g")
       .attr("id", "airports")
       .selectAll("circle")
       .data(airportsData)
-      .enter().append("circle")
+      .join("circle")
       .attr("r", (d) => Math.sqrt(d.size / Math.PI)*2)
+      .attr("fill", (d) => d3.interpolateViridis((d.size - 1) / maxSize))
       .attr("cx", (d) => d.position[0])
       .attr("cy", (d) => d.position[1])
     
@@ -80,18 +89,18 @@ class USMap extends React.Component {
   componentDidMount() {
     window.addEventListener('resize', this.setSize);
 
-    const g = this.svg.append("g");
+    const root = this.svg.append("g");
 
     this.zoom = d3
       .zoom()
       .scaleExtent([1, 10])
       .on("zoom", (event) => {
         const { transform } = event;
-        g.attr("transform", transform);
-        g.attr("stroke-width", 1 / transform.k);
+        root.attr("transform", transform);
+        root.attr("stroke-width", 1 / transform.k);
       });
 
-    const states = g
+    const states = root
       .append("g")
       .attr("id", "us-states")
       .selectAll("path")
