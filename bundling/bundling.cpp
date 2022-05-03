@@ -72,8 +72,7 @@ public:
 };
 
 double Ca(edge p, edge q, int i){
-	return abs((p.points[i].x * q.points[i].x + p.points[i].y - q.points[i].y) /
-		(p.length * q.length));
+	return abs((p.points[i].x * q.points[i].x + p.points[i].y - q.points[i].y) / (p.length * q.length));
 }
 
 double Cs(edge p, edge q){
@@ -109,7 +108,6 @@ double V(edge p, edge q){
 		point im(i0.x + (i1.x - i0.x)/2, i0.y + (i1.y - i0.y)/2);
 		point a(pm.x - im.x, pm.y - im.y);
 		point b(i0.x - i1.x, i0.y - i1.y);
-		// return max(1 - ((2 * sqrt(a.x*a.x + a.y*a.y))/(sqrt(b.x*b.x + b.y*b.y))), 0);
 		return max(1 - ((2 * sqrt(a.x*a.x + a.y*a.y))/(sqrt(b.x*b.x + b.y*b.y))), 0.);
 	} else {
 		double y = 1;
