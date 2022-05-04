@@ -31,7 +31,7 @@ class USMap extends React.Component {
       const x = parseFloat(airport.querySelector('[key="x"]').innerHTML)*0.1
       const y = parseFloat(airport.querySelector('[key="y"]').innerHTML)*(-0.1)
       const code = airport.querySelector('[key="tooltip"]').innerHTML.substring(0,3)
-      airportsData.push({ position: projection([x,y],), code, size: 0 })
+      airportsData.push({ position: projection([x,y],), code, size: 0, index: i })
     }
     let maxSize = 0
     for (let i = 0; i < routesElements.length; i++) {
@@ -41,27 +41,40 @@ class USMap extends React.Component {
       const B = parseInt(route.getAttribute("target"))
       airportsData[A].size++;
       airportsData[B].size++;
-      routesData.push({source: airportsData[A].position, target: airportsData[B].position})
+      routesData.push({source: A, target: B, sourcePostion: airportsData[A].position, targetPostion: airportsData[B].position})
       maxSize = Math.max(A, B, maxSize)
     }
 
+    airportsData.sort((a,b) =>  b.size - a.size)
+
     const root = this.svg.selectChild()
 
-    root.append("g")
+    const routes = root.append("g")
       .attr("id", "routes")
       .selectAll("line")
       .data(routesData)
       .join("line")
-      .attr("stroke", (d) => {
-        const dir = difference(d.target, d.source)
+      .style("stroke", (d) => {
+        const dir = difference(d.targetPostion, d.sourcePostion)
         const i = (1 + dot(dir , [1, 0])/size(dir))/2
-        return d3.interpolateRainbow(i)
+        d.color = d3.interpolateRainbow(i)
+        return d.color
       })
-      .attr("x1", (d) => d.source[0])
-      .attr("y1", (d) => d.source[1])
-      .attr("x2", (d) => d.target[0])
-      .attr("y2", (d) => d.target[1])
-      
+      .attr("x1", (d) => d.sourcePostion[0])
+      .attr("y1", (d) => d.sourcePostion[1])
+      .attr("x2", (d) => d.targetPostion[0])
+      .attr("y2", (d) => d.targetPostion[1])
+      .on("load", function(e, d) {
+        console.log(d3.select(this))
+        airportsData[d.source].routes.merge(d3.select(this))
+        airportsData[d.target].routes.merge(d3.select(this))
+      })
+
+    for (let i = 0; i < airportsData.length; i++) {
+      const airport = airportsData[i]
+      airport.routes = routes.filter(d => d.source === airport.index || d.target === airport.index)
+      airport.routesInverse = routes.filter(d => d.source !== airport.index && d.target !== airport.index)
+    }
 
     const airports = root
       .append("g")
@@ -70,9 +83,22 @@ class USMap extends React.Component {
       .data(airportsData)
       .join("circle")
       .attr("r", (d) => Math.sqrt(d.size / Math.PI)*2)
-      .attr("fill", (d) => d3.interpolateViridis((d.size - 1) / maxSize))
       .attr("cx", (d) => d.position[0])
       .attr("cy", (d) => d.position[1])
+      .style("fill", (d) => { 
+        d.color = d3.interpolateViridis((d.size - 1) / maxSize)
+        return d.color
+      })
+      .on("mouseover", function(e,d) {
+        d3.select(this).style("fill", "red");
+        d.routes.style("stroke", "red")
+        d.routesInverse.style("opacity", 0.1)
+      })                  
+      .on("mouseout", function(e, d) {
+        d3.select(this).style("fill", d.color);
+        d.routes.style("stroke", (l) => l.color)
+        d.routesInverse.style("opacity", 1)
+      });
     
     airports.append("title").text((d) => d.code);
   }
