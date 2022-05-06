@@ -224,30 +224,32 @@ void iterate(int cycles){
 	vector<int> P = {1, 2, 4, 8, 16, 32};
 	vector<int> I = {50, 33, 22, 15, 9, 7};
 	vector<double> S = {0.4, 0.02, 0.01, 0.005, 0.0025, 0.00125};
+	// Cyclus that changes parameters.
 	for (int cycle = 0; cycle < cycles && cycle < 6; cycle++){
 		cout << "cycle: " << cycle << endl;
+		// Recalculates positions of points because count of points has changed.
 		for (auto &&e : edges){
 			e.updatePoints(P[cycle]);
 		}
+		// Iterations of algorithm
 		for (int i = 0; i < I[cycle]; i++){
 			cout << "iteration: " << i + 1 << "/"<< I[cycle] << endl;
-			// vector<vector<double>> Fp;
+			// Stores the directions where should every subpoint of edge move.
 			vector<vector<point>> directions;
 			for (int p = 0; p < edges.size(); p++){
-				// Fp.push_back(vector<double>(P[cycle], 0));
 				directions.push_back(vector<point>(P[cycle], point(0, 0)));
 				for (int q = 0; q < edges.size(); q++){
 					for (int j = 0; j < P[cycle]; j++){
-						if (p == q) continue;
+						if (p == q) continue; // We don't want to be affected by the same edge.
 						double compatibility = Ce(edges[p], edges[q], j);
-						if (compatibility < 0.05) continue;
-						// Fp[p][j] +=.push_back(compatibility);
-						point dir = edges[q].points[j] - edges[p].points[j];
-						dir = dir.normalized() * compatibility;
+						if (compatibility < 0.05) continue; // Threshhold so it will ignore almost irelevant edges.
+						point dir = edges[q].points[j] - edges[p].points[j]; // Direction between subpoints.
+						dir = dir.normalized() * compatibility; // Direction between subpoints but normalized and scaled by compatibility.
 						directions[p][j] += dir;
 					}					
 				}
 			}
+			// Apply directions scaled by S.
 			for (int p = 0; p < edges.size(); p++){
 				edges[p].movePoints(directions[p], S[cycle]);
 			}
@@ -304,12 +306,9 @@ int main(){
 		return 404;
 	}
 
-	//TODO iterace
 	iterate(6);
-	// for (auto &&e : edges){
-	// 	e.updatePoints(32);
-	// }
 
+	// Here should be saving to file.
 
 	double xShift = -minX + 10, yShift = -minY + 10;
 	int width = maxX + xShift + 10, height = maxY + yShift + 10;
