@@ -13,13 +13,48 @@ class node;
 vector<edge> edges;
 vector<node> nodes;
 
-int K = 5;
+double magnitude(double x, double y){
+	return sqrt(x*x + y*y);
+}
 
 class point{
 public:
 	double x;
 	double y;
-	point(double x, double y) : x(x), y(y){}
+	double length;
+	double normX = 0;
+	double normY = 0;
+	point(double x, double y) : x(x), y(y){
+		length = magnitude(x, y);
+		if (length != 0){
+			normX = x / length;
+			normY = y / length;
+		}
+	}
+	point normalized(){
+		return point(normX, normY);
+	}
+    inline point operator- (const point other) const { return point(x - other.x, y - other.y); }
+    inline point operator+ (const point other) const { return point(x + other.x, y + other.y); }
+    inline void operator+= (const point other) { 
+		x += other.x;
+		y += other.y;
+		length = magnitude(x, y);
+		if (length != 0){
+			normX = x / length;
+			normY = y / length;
+		}
+	}
+    inline point operator* (const double other) const { return point(x * other, y * other); }
+    inline void operator*= (const double other) { 
+		x *= other;
+		y *= other;
+		length = magnitude(x, y);
+		if (length != 0){
+			normX = x / length;
+			normY = y / length;
+		}
+	}
 };
 
 
@@ -37,24 +72,20 @@ public:
 	int id;
 	int from;
 	int to;
-	int length;
+	double length;
 	double dirX;
 	double dirY;
 	double kp;
+	point dir = point(0, 0);
 	vector<point> points;
 	edge(int id, int from, int to) : id(id), from(from), to(to){
-		double x = nodes[to].x - nodes[from].x;
-		double y = nodes[to].y - nodes[from].y;
-		dirX = x;
-		dirY = y;
-		length = sqrt(x*x + y*y);
-		kp = K/length;
+		dirX = nodes[to].x - nodes[from].x;
+		dirY = nodes[to].y - nodes[from].y;
+		dir = point(nodes[to].x - nodes[from].x, nodes[to].y - nodes[from].y);
+		length = magnitude(dirX, dirY);
+		kp = 2/length;
 		points.push_back(point(nodes[from].x, nodes[from].y));
-		x /= K;
-		y /= K;
-		for(int i = 0; i < K-1; i++){
-			points.push_back(point(points[i].x + x, points[i].y + y));
-		}
+		points.push_back(point(nodes[from].x + dirX/2, nodes[from].y + dirY/2));
 		points.push_back(point(nodes[to].x, nodes[to].y));
 	}
 
@@ -68,6 +99,56 @@ public:
 
 	point last(){
 		return points[points.size()-1];
+	}
+
+	void updatePoints(int count){
+		if (points.size() == count + 2) return;
+		// double len = 0;
+		// for (int i = 1; i < points.size(); i++){
+		// 	point p = points[i] - before;
+		// 	len += p.length;
+		// 	before = points[i];
+		// }
+		double step = length / (count+1);
+		vector<point> pointsNew;
+		pointsNew.push_back(first());
+		double currLength = 0;
+		double nextLength = step;
+		point before = first();
+		for (int i = 1; i < points.size(); i++){
+			point p = points[i] - before;
+			if (currLength + p.length > nextLength){
+				double size = nextLength - currLength;
+				pointsNew.push_back(point(before.x + p.normX*size, before.y + p.normY*size));
+				nextLength += step;
+				i--;
+			} else {
+				before = points[i];
+				currLength += p.length;
+			}
+		}
+		pointsNew.push_back(last());
+		points = pointsNew;
+		before = first();
+		length = 0;
+		for (int i = 1; i < points.size(); i++){
+			point p = points[i] - before;
+			length += p.length;
+			before = points[i];
+		}
+	}
+
+	void movePoints(vector<point> directions, double step){
+		for (int i = 1; i < points.size()-1; i++){
+			points[i] += directions[i-1].normalized() * step;
+		}
+		point before = first();
+		length = 0;
+		for (int i = 1; i < points.size(); i++){
+			point p = points[i] - before;
+			length += p.length;
+			before = points[i];
+		}
 	}
 };
 
@@ -136,7 +217,43 @@ double Cv(edge p, edge q){
 }
 
 double Ce(edge p, edge q, int i){
-	return Ca(p, q, i) * Cs(p, q) * Cp(p, q) * Cv(p, q);
+	return Ca(p, q, i) * Cs(p, q) * Cp(p, q);
+}
+
+void iterate(int cycles){
+	vector<int> P = {1, 2, 4, 8, 16, 32};
+	vector<int> I = {50, 33, 22, 15, 9, 7};
+	vector<double> S = {0.4, 0.02, 0.01, 0.005, 0.0025, 0.00125};
+	for (int cycle = 0; cycle < cycles && cycle < 6; cycle++){
+		cout << "cycle: " << cycle << endl;
+		for (auto &&e : edges){
+			e.updatePoints(P[cycle]);
+		}
+		for (int i = 0; i < I[cycle]; i++){
+			cout << "iteration: " << i + 1 << "/"<< I[cycle] << endl;
+			// vector<vector<double>> Fp;
+			vector<vector<point>> directions;
+			for (int p = 0; p < edges.size(); p++){
+				// Fp.push_back(vector<double>(P[cycle], 0));
+				directions.push_back(vector<point>(P[cycle], point(0, 0)));
+				for (int q = 0; q < edges.size(); q++){
+					for (int j = 0; j < P[cycle]; j++){
+						if (p == q) continue;
+						double compatibility = Ce(edges[p], edges[q], j);
+						if (compatibility < 0.05) continue;
+						// Fp[p][j] +=.push_back(compatibility);
+						point dir = edges[q].points[j] - edges[p].points[j];
+						dir = dir.normalized() * compatibility;
+						directions[p][j] += dir;
+					}					
+				}
+			}
+			for (int p = 0; p < edges.size(); p++){
+				edges[p].movePoints(directions[p], S[cycle]);
+			}
+		}
+		
+	}
 }
 
 int main(){
@@ -145,9 +262,9 @@ int main(){
 	if (in.is_open()){
 		string line;
 		while (getline(in, line)){
-			if (line == "    <!-- nodes -->"){
+			if (line == "    <!-- nodes -->\r"){
 				getline(in, line);
-				while (line != ""){
+				while (line != "\r"){
 					int id;
 					double x = 0, y = 0;
 					string tooltip(100, ' ');
@@ -168,9 +285,9 @@ int main(){
 					getline(in, line);
 				}
 			}
-			if (line == "    <!-- edges -->"){
+			if (line == "    <!-- edges -->\r"){
 				getline(in, line);
-				while (line != "  </graph>"){
+				while (line != "  </graph>\r"){
 					int id, source, target;
 					sscanf(line.c_str(), "    <edge id=\"%d\" source=\"%d\" target=\"%d\">", &id, &source, &target);
 					// cout << id << " " << source << " " << target << endl;
@@ -188,6 +305,10 @@ int main(){
 	}
 
 	//TODO iterace
+	iterate(6);
+	// for (auto &&e : edges){
+	// 	e.updatePoints(32);
+	// }
 
 
 	double xShift = -minX + 10, yShift = -minY + 10;
@@ -200,16 +321,20 @@ int main(){
 			img[coord(x, y, 2, width)] = 255;
 		}
 	}
-	for (point p : edges[0].points){
-		int xCoord = p.x + xShift, yCoord = p.y + yShift;
-		for (int y = -1; y < 2; y++){
-			for (int x = -1; x < 2; x++){
-				img[coord(xCoord + x, yCoord + y, 0, width)] = 0;
-				img[coord(xCoord + x, yCoord + y, 1, width)] = 0;
-				img[coord(xCoord + x, yCoord + y, 2, width)] = 255;
+	for (int i = 0; i < 10; i++){
+		for (point p : edges[i].points){
+			int xCoord = p.x + xShift, yCoord = p.y + yShift;
+			for (int y = -1; y < 2; y++){
+				for (int x = -1; x < 2; x++){
+					img[coord(xCoord + x, yCoord + y, 0, width)] = 0;
+					img[coord(xCoord + x, yCoord + y, 1, width)] = 0;
+					img[coord(xCoord + x, yCoord + y, 2, width)] = 255;
+				}
 			}
 		}
 	}
+	
+	
 	for (node n : nodes){
 		int xCoord = n.x + xShift, yCoord = n.y + yShift;
 		for (int y = -1; y < 2; y++){
