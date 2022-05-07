@@ -7,7 +7,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # There is NO WARRANTY, to the extent permitted by law.
  
 
-# Make data base, printed on Fri May  6 13:18:54 2022
+# Make data base, printed on Sat May  7 12:23:50 2022
 
 # Variables
 
@@ -16,7 +16,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # automatic
 ?F = $(notdir $?)
 # environment
-WSLENV = VSCODE_WSL_EXT_LOCATION/up:VSCODE_SERVER_TAR/up
+WSLENV = VSCODE_WSL_EXT_LOCATION/up
 # default
 .SHELLFLAGS := -c
 # environment
@@ -39,8 +39,8 @@ VSCODE_NLS_CONFIG = {"locale":"cs","availableLanguages":{}}
 _ = /home/tosnejan/.vscode-server/bin/57fd6d0195bb9b9d1b49f6da5db789060795de47/node
 # makefile (from 'makefile', line 27)
 CFLAGS = -g -Wall -Wextra
-# makefile (from 'makefile', line 1)
-MAKEFILE_LIST :=  makefile
+# makefile (from 'build/bundling.d', line 1)
+MAKEFILE_LIST :=  makefile build/bundling.d
 # 'override' directive
 GNUMAKEFLAGS := 
 # makefile (from 'makefile', line 17)
@@ -66,9 +66,7 @@ BIN_PATH = $(BUILD_PATH)/bin
 # environment
 VSCODE_LOG_STACK = false
 # environment
-VSCODE_IPC_HOOK_CLI = /tmp/vscode-ipc-65b5f592-ed82-408c-a40f-8de73be6044f.sock
-# environment
-VSCODE_SERVER_TAR = /mnt/c/Users/janto/AppData/Local/Temp/vscode-remote-wsl/57fd6d0195bb9b9d1b49f6da5db789060795de47/vscode-server-stable-linux-x64.tar.gz
+VSCODE_IPC_HOOK_CLI = /tmp/vscode-ipc-db856fab-f200-4fb5-80ff-6e2237557b47.sock
 # default
 .FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell archives jobserver output-sync check-symlink load
 # environment
@@ -90,7 +88,7 @@ LESSCLOSE = /usr/bin/lesspipe %s %s
 # environment
 LOGNAME = tosnejan
 # environment
-APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = true
+APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = 1
 # environment
 VSCODE_HANDLES_UNCAUGHT_ERRORS = true
 # automatic
@@ -174,7 +172,7 @@ WSL_DISTRO_NAME = Ubuntu
 # environment
 MOTD_SHOWN = update-motd
 # variable set hash-table stats:
-# Load=81/1024=8%, Rehash=0, Collisions=13/147=9%
+# Load=80/1024=8%, Rehash=0, Collisions=13/148=9%
 
 # Pattern-specific Variable Values
 
@@ -182,10 +180,10 @@ MOTD_SHOWN = update-motd
 
 # Directories
 
-# . (device 14, inode 4785074605025521): 6 files, no impossibilities.
-# src (device 14, inode 3940649674895784): 5 files, no impossibilities so far.
+# . (device 14, inode 4785074605025521): 10 files, no impossibilities.
+# src (device 14, inode 3940649674895784): No files, no impossibilities so far.
 
-# 11 files, no impossibilities in 2 directories.
+# 10 files, no impossibilities in 2 directories.
 
 # Implicit Rules
 
@@ -198,10 +196,10 @@ build/%.o: src/%.cpp
 
 # Files
 
-build/bundling.o: src/bundling.cpp
+build/bundling.o: src/bundling.cpp src/bundling.cpp src/stb/stb.h src/stb/stb_image.h src/stb/stb_image_write.h src/stb/stb_image_resize.h
 #  Implicit rule search has been done.
 #  Implicit/static pattern stem: 'bundling'
-#  File does not exist.
+#  Last modified 2022-05-06 14:13:18.2953544
 #  File has been updated.
 #  Needs to be updated (-q is set).
 # automatic
@@ -211,13 +209,13 @@ build/bundling.o: src/bundling.cpp
 # automatic
 # * := bundling
 # automatic
-# + := src/bundling.cpp
+# + := src/bundling.cpp src/bundling.cpp src/stb/stb.h src/stb/stb_image.h src/stb/stb_image_write.h src/stb/stb_image_resize.h
 # automatic
 # | := 
 # automatic
 # < := src/bundling.cpp
 # automatic
-# ^ := src/bundling.cpp
+# ^ := src/bundling.cpp src/stb/stb.h src/stb/stb_image.h src/stb/stb_image_write.h src/stb/stb_image_resize.h
 # automatic
 # ? := src/bundling.cpp
 # variable set hash-table stats:
@@ -245,9 +243,21 @@ all: build/bin/main
 #  Modification time never checked.
 #  File has not been updated.
 
+src/stb/stb.h:
+#  Implicit rule search has been done.
+#  Last modified 2022-05-04 16:43:42.0420676
+#  File has been updated.
+#  Successfully updated.
+
+src/stb/stb_image.h:
+#  Implicit rule search has been done.
+#  Last modified 2022-05-04 16:43:42.0430653
+#  File has been updated.
+#  Successfully updated.
+
 build/bin/main: build/bundling.o
 #  Implicit rule search has not been done.
-#  File does not exist.
+#  Last modified 2022-05-06 14:13:18.4295096
 #  File has been updated.
 #  Needs to be updated (-q is set).
 # variable set hash-table stats:
@@ -255,6 +265,12 @@ build/bin/main: build/bundling.o
 #  recipe to execute (from 'makefile', line 60):
 	@echo "Linking: $@"
 	$(CXX) $(OBJECTS) -o $@ $(CFLAGS) $(LDFLAGS)
+
+src/stb/stb_image_resize.h:
+#  Implicit rule search has been done.
+#  Last modified 2022-05-04 16:43:42.0440665
+#  File has been updated.
+#  Successfully updated.
 
 # Not a target:
 makefile:
@@ -312,31 +328,37 @@ clean:
 # Not a target:
 src/bundling.cpp:
 #  Implicit rule search has been done.
-#  Last modified 2022-05-06 13:18:30.3599592
+#  Last modified 2022-05-06 16:42:39.1542103
 #  File has been updated.
 #  Successfully updated.
 
 # Not a target:
 build/bundling.d:
 #  Implicit rule search has been done.
-#  File does not exist.
+#  Last modified 2022-05-06 14:13:18.1966158
 #  File has been updated.
-#  Failed to be updated.
+#  Successfully updated.
+
+src/stb/stb_image_write.h:
+#  Implicit rule search has been done.
+#  Last modified 2022-05-04 16:43:42.0450602
+#  File has been updated.
+#  Successfully updated.
 
 # files hash-table stats:
-# Load=13/1024=1%, Rehash=0, Collisions=0/47=0%
+# Load=17/1024=2%, Rehash=0, Collisions=0/60=0%
 # VPATH Search Paths
 
 # No 'vpath' search paths.
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 25 / storage = 258 B / avg = 10 B
-# current buf: size = 8162 B / used = 258 B / count = 25 / avg = 10 B
+# strcache buffers: 1 (0) / strings = 31 / storage = 353 B / avg = 11 B
+# current buf: size = 8162 B / used = 353 B / count = 31 / avg = 11 B
 
-# strcache performance: lookups = 60 / hit rate = 58%
+# strcache performance: lookups = 74 / hit rate = 58%
 # hash-table stats:
-# Load=25/8192=0%, Rehash=0, Collisions=2/60=3%
-# Finished Make data base on Fri May  6 13:18:54 2022
+# Load=31/8192=0%, Rehash=0, Collisions=1/74=1%
+# Finished Make data base on Sat May  7 12:23:50 2022
 
  

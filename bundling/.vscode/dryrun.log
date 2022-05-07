@@ -5,18 +5,14 @@ echo "Creating directories"
 mkdir -p build/
 mkdir -p build/bin
 make all
- 
 make[1]: Entering directory '/mnt/c/Users/janto/Documents/VSCode/VIZ/airline-travel-usa/bundling'
- 
 echo "Compiling: src/bundling.cpp -> build/bundling.o"
 g++  -std=c++11 -Wall -Wextra -g -I include/ -I /usr/local/include -MP -MMD -c src/bundling.cpp -o build/bundling.o
- 
 echo "Linking: build/bin/main"
 g++ build/bundling.o -o build/bin/main -g -Wall -Wextra 
 echo "Making symlink: main -> build/bin/main"
 rm -f main
 ln -s build/bin/main main
 make[1]: Leaving directory '/mnt/c/Users/janto/Documents/VSCode/VIZ/airline-travel-usa/bundling'
- 
 make: Leaving directory '/mnt/c/Users/janto/Documents/VSCode/VIZ/airline-travel-usa/bundling'
  
