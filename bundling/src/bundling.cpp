@@ -410,7 +410,7 @@ int main(){
 		outputFile << "\"code\": " << "\"" << n.tooltip.substr(0, 3) << "\"" << ", ";
 		outputFile << "\"dep\": " << n.departures << ", ";
 		outputFile << "\"arr\": " << n.arrivals << ", ";
-		outputFile << "\"pos\": [" << n.x << ", "  << n.y <<"]";
+		outputFile << "\"pos\": [" << (n.x *0.1) << ", "  << (n.y * (-0.1)) <<"]";
 		outputFile << "}" << (nodes.size() - 1 != n.id ? "," : "") << "\n";
 	}
 	outputFile << "], \n";
@@ -422,7 +422,7 @@ int main(){
 		outputFile << "\"t\": " << e.to << ", ";
 		outputFile << "\"line\": ["; 
 		for(int i = 0; i < (int)e.points.size(); i++){
-			outputFile << "[" << e.points[i].x << ", "  << e.points[i].y <<"]";
+			outputFile << "[" << (e.points[i].x * 0.1) << ", "  << (e.points[i].y * (-0.1)) <<"]";
 			outputFile << (e.points.size() - 1 != i ? ", " : "");
 		}
 		outputFile << "]";

@@ -91,7 +91,7 @@ body.menu-visible #sidebarButton {
   left: max(20% , 300px );
 } */
 
-.us-map {
+.visualization {
   position: absolute;
   left: 0;
   width: 100%;
@@ -99,7 +99,7 @@ body.menu-visible #sidebarButton {
   transition: width 0.5s ease-out, left 0.5s ease-out;
 }
 
-body.menu-visible .us-map {
+body.menu-visible .visualization {
   width: 80%;
   left: max(20% , 300px );
 }
@@ -109,11 +109,11 @@ body.menu-visible .us-map {
   stroke: rgb(180, 180, 180);
 }
 
-.us-map circle {
+.airports circle {
   stroke-width: 1;
 }
 
-.us-map line {
+.flights line {
   stroke-width: 0.5;
 }
 
