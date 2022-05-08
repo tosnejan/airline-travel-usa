@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <set>
 #include <string>
 #include <math.h>
 using namespace std;
@@ -12,6 +13,7 @@ class Node;
 
 vector<Edge> edges;
 vector<Node> nodes;
+set<int>* foundEdges;
 
 double magnitude(double x, double y){
 	return sqrt(x*x + y*y);
@@ -93,6 +95,8 @@ public:
 class Node{
 public:
 	int id;
+	int arrivals = 0;
+	int departures = 0;
 	double x;
 	double y;
 	string tooltip;
@@ -105,19 +109,15 @@ public:
 	int from;
 	int to;
 	double length;
-	double dirX;
-	double dirY;
 	double kp;
 	Direction dir;
 	Direction normal;
 	vector<Point> points;
 	vector<Direction> directions = vector<Direction>(63);
-	Edge(int id, int from, int to) : id(id), from(from), to(to) {
-		dirX = nodes[to].x - nodes[from].x;
-		dirY = nodes[to].y - nodes[from].y;
+	Edge(int id, int from, int to): id(id), from(from), to(to) {
 		dir = Direction(nodes[to].x - nodes[from].x, nodes[to].y - nodes[from].y);
 		normal = Direction(dir.y, -dir.x);
-		length = magnitude(dirX, dirY);
+		length = magnitude(dir.x, dir.y);
 		kp = 2 / length;
 		points.reserve(65);
 		points.push_back(Point(nodes[from].x, nodes[from].y));
@@ -151,7 +151,7 @@ public:
 
 		// this is maybe wrong :(
 		// maybe update this with sum of segment lengths
-		kp = (count+1) / length;
+		kp = (count+1) / (length);
 	}
 
 	void movePoints(double count, double step){
@@ -162,22 +162,22 @@ public:
 	}
 };
 
-double Ca(Edge p, Edge q){
-	return abs((p.dirX * q.dirX + p.dirY * q.dirY) / (p.length * q.length));
+double Ca(Edge &p, Edge &q){
+	return abs((p.dir.x * q.dir.x + p.dir.y * q.dir.y) / (p.length * q.length));
 }
 
-double Cs(Edge p, Edge q){
-	double l = (p.length + q.length)/2;
-	return 2 / (min(p.length, q.length)/l + max(p.length, q.length) / l);
+double Cs(Edge &p, Edge &q){
+	double avg = (p.length + q.length)/2;
+	return 2 / (min(p.length, q.length)/avg + max(p.length, q.length) / avg);
 }
 
-double Cp(Edge p, Edge q){
+double Cp(Edge &p, Edge &q){
 	double l = (p.length + q.length)/2;
 	Direction x = p.midpoint() - q.midpoint();
 	return l / (l + x.length);
 }
 
-double V(Edge p, Edge q){
+double V(Edge &p, Edge &q){
 	Point p0 = p.first();
 	Point q0 = q.first(), q1 = q.last(), qm = q.midpoint();
 	double size = p.dir.normX*q.normal.normY - p.dir.normY*q.normal.normX;
@@ -190,11 +190,11 @@ double V(Edge p, Edge q){
 	return max(1 - (2 * Direction(p.midpoint() - im).length) / Direction(i0 - i1).length, 0.0);
 }
 
-double Cv(Edge p, Edge q){
+double Cv(Edge &p, Edge &q){
 	return min(V(p, q), V(q, p));
 }
 
-double Ce(Edge p, Edge q){
+double Ce(Edge &p, Edge &q){
 	//double ca = Ca(p, q), cs = Cs(p,q), cp = Cp(p,q), cv = Cv(p,q);
 	// double ret = ca*cs*cp*cv;
 	// cout << "Ca: " << ca << ", Cs: " << cs << ", Cp: " << cp << ", Cv: " << cv << ", ret: " << ret << endl;
@@ -288,6 +288,7 @@ string trim(const string &s) {
 }
 
 int main(){
+	set<int>* foundEdges = new set<int>[nodes.size()];
 	ifstream in("airlines.graphml");
 	double minX = 10000, minY = 10000, maxX = -10000, maxY = -10000;
 	if (in.is_open()){
@@ -297,7 +298,7 @@ int main(){
 			if (line.find("<!-- nodes -->") != string::npos){
 				getline(in, line);
 				while (line != ""){
-					int id;
+					int id = 0;
 					double x = 0, y = 0;
 					string tooltip(100, ' ');
 					sscanf(line.c_str(), "<node id=\"%d\">", &id);
@@ -310,8 +311,6 @@ int main(){
 					getline(in, line);
 					line = trim(line);
 					sscanf(line.c_str(), "<data key=\"y\">%lf</data>", &y);
-					// x *= 0.1; 
-					// y *= -1; 
 					// cout << x << " " << y << " " << tooltip.c_str() << endl;
 					nodes.push_back(Node(id, x, y, tooltip));
 					if (minX > x) minX = x;
@@ -326,15 +325,24 @@ int main(){
 			if (line.find("<!-- edges -->") != string::npos){
 				getline(in, line);
 				line = trim(line);
+				int edgeCounter = 0;
+				foundEdges = new set<int>[nodes.size()];
 				while (line.find("</graph>") == string::npos){
-					int id, source, target;
+					int id = 0, source = 0, target = 0;
 					sscanf(line.c_str(), "<edge id=\"%d\" source=\"%d\" target=\"%d\">", &id, &source, &target);
-					// cout << id << " " << source << " " << target << endl;
-					edges.push_back(Edge(id, source, target));
+					nodes[target].arrivals++;
+					nodes[source].departures++;
+					// Edges are sorted by source
+					if(foundEdges[source].find(target) == foundEdges[source].end() && 
+							foundEdges[target].find(source) == foundEdges[target].end()) {
+						edges.push_back(Edge(edgeCounter++, source, target));
+						foundEdges[target].insert(source);
+					}
 					getline(in, line);
 					getline(in, line);
 					line = trim(line);
 				}
+				delete [] foundEdges;
 			}
 			
     }
@@ -344,7 +352,7 @@ int main(){
 		return 404;
 	}
 
-	iterate(6);
+	iterate(5);
 
 	// Here should be saving to file.
 
@@ -392,14 +400,39 @@ int main(){
 		counter++;
 	}
 
-	ofstream outputFile("new_data.txt");
-	for (int i = 0; i < edges.size(); i++){
-		for (Point &p : edges[i].points){
-			outputFile << p.x << "," << p.y << ";";
-		}
-		outputFile << endl;
+	ofstream outputFile("airports-data.json");
+	// JSON beginning
+	outputFile << "{\n";
+	outputFile << "\"nodes\": [\n";
+	for (Node &n : nodes){
+		outputFile << "{";
+		outputFile << "\"id\": " << n.id << ", ";
+		outputFile << "\"code\": " << "\"" << n.tooltip.substr(0, 3) << "\"" << ", ";
+		outputFile << "\"dep\": " << n.departures << ", ";
+		outputFile << "\"arr\": " << n.arrivals << ", ";
+		outputFile << "\"position\": [" << n.x << ", "  << n.y <<"]";
+		outputFile << "}" << (nodes.size() - 1 != n.id ? "," : "") << "\n";
 	}
+	outputFile << "], \n";
+	outputFile << "\"edges\": [\n";
+	for (Edge &e : edges){
+		outputFile << "{ ";
+		outputFile << "\"id\": " << e.id << ", ";
+		outputFile << "\"source\": " << e.from << ", ";
+		outputFile << "\"target\": " << e.to << ", ";
+		outputFile << "\"points\": ["; 
+		for(int i = 0; i < (int)e.points.size(); i++){
+			outputFile << "[" << e.points[i].x << ", "  << e.points[i].y <<"]";
+			outputFile << (e.points.size() - 1 != i ? ", " : "");
+		}
+		outputFile << "]";
+		outputFile << "}" << (edges.size() - 1 != e.id ? "," : "") << "\n";
+	}
+	outputFile << "]\n";
+	// JSON end
+	outputFile << "}\n";
 	outputFile.close();
+
 	
 	stbi_write_png("image.png", width, height, 3, img, 0);
 
