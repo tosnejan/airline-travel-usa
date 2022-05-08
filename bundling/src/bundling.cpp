@@ -7,67 +7,99 @@
 using namespace std;
 #define coord(x, y, c, w) ((y)*w*3 + (x)*3 + c)
 
-class edge;
-class node;
+class Edge;
+class Node;
 
-vector<edge> edges;
-vector<node> nodes;
+vector<Edge> edges;
+vector<Node> nodes;
 
 double magnitude(double x, double y){
 	return sqrt(x*x + y*y);
 }
 
-class point{
+class Point{
 public:
-	double x;
-	double y;
-	double length;
-	double normX = 0;
-	double normY = 0;
-	point(double x, double y) : x(x), y(y){
-		length = magnitude(x, y);
-		if (length != 0){
-			normX = x / length;
-			normY = y / length;
-		}
+	double x, y;
+	Point(){
+		this->x = 0;
+		this->y = 0;
 	}
-	point normalized(){
-		return point(normX, normY);
+	Point(double x, double y){
+		this->x = x;
+		this->y = y;
 	}
-    inline point operator- (const point other) const { return point(x - other.x, y - other.y); }
-    inline point operator+ (const point other) const { return point(x + other.x, y + other.y); }
-    inline void operator+= (const point other) { 
+	inline Point operator- (const Point other) const { return Point(x - other.x, y - other.y); }
+	inline Point operator+ (const Point &other) const { return Point(x + other.x, y + other.y); }
+	inline void operator+= (const Point &other) { 
 		x += other.x;
 		y += other.y;
-		length = magnitude(x, y);
-		if (length != 0){
-			normX = x / length;
-			normY = y / length;
-		}
 	}
-    inline point operator* (const double other) const { return point(x * other, y * other); }
-    inline void operator*= (const double other) { 
+	inline Point operator* (const double other) const { return Point(x * other, y * other); }
+	inline void operator*= (const double other) { 
 		x *= other;
 		y *= other;
-		length = magnitude(x, y);
-		if (length != 0){
-			normX = x / length;
-			normY = y / length;
-		}
+	}
+};
+
+class Direction
+{
+public:
+	double x,y;
+	double length;
+	double normX, normY;
+	Direction() {
+		this->x = 0;
+		this->y = 0;
+	}
+	Direction(double x, double y) {
+		this->x = x;
+		this->y = y;
+		size();
+		normX = x / length;
+		normY = y / length;
+	}
+	Direction(Point p) {
+		x = p.x;
+		y = p.y;
+		length = sqrt(x*x + y*y);
+		normX = x / length;
+		normY = y / length;
+	}
+	inline double size() {
+		length = sqrt(x*x + y*y);
+		return length;
+	}
+	inline Direction normalized(){
+		double l = size();
+		return Direction(x/l, y/l);
+	}
+	inline Point point(){
+		return Point(x,y);
+	}
+	inline Direction operator- (const Direction other) const { return Direction(x - other.x, y - other.y); }
+	inline Direction operator+ (const Direction &other) const { return Direction(x + other.x, y + other.y); }
+	inline void operator+= (const Direction &other) { 
+		x += other.x;
+		y += other.y;
+	}
+	inline Direction operator* (const double other) const { return Direction(x * other, y * other); }
+	inline void operator*= (const double other) { 
+		x *= other;
+		y *= other;
 	}
 };
 
 
-class node{
+class Node{
 public:
 	int id;
 	double x;
 	double y;
 	string tooltip;
-	node(int id, double x, double y, string tooltip) : id(id), x(x), y(y), tooltip(tooltip){}
+	Node(int id, double x, double y, string tooltip) : id(id), x(x), y(y), tooltip(tooltip){}
 };
 
-class edge{
+class Edge{ 
 public:
 	int id;
 	int from;
@@ -76,186 +108,183 @@ public:
 	double dirX;
 	double dirY;
 	double kp;
-	point dir = point(0, 0);
-	vector<point> points;
-	edge(int id, int from, int to) : id(id), from(from), to(to){
+	Direction dir;
+	Direction normal;
+	vector<Point> points;
+	vector<Direction> directions = vector<Direction>(63);
+	Edge(int id, int from, int to) : id(id), from(from), to(to) {
 		dirX = nodes[to].x - nodes[from].x;
 		dirY = nodes[to].y - nodes[from].y;
-		dir = point(nodes[to].x - nodes[from].x, nodes[to].y - nodes[from].y);
+		dir = Direction(nodes[to].x - nodes[from].x, nodes[to].y - nodes[from].y);
+		normal = Direction(dir.y, -dir.x);
 		length = magnitude(dirX, dirY);
-		kp = 2/length;
-		points.push_back(point(nodes[from].x, nodes[from].y));
-		points.push_back(point(nodes[from].x + dirX/2, nodes[from].y + dirY/2));
-		points.push_back(point(nodes[to].x, nodes[to].y));
+		kp = 2 / length;
+		points.reserve(65);
+		points.push_back(Point(nodes[from].x, nodes[from].y));
+		points.push_back(Point(nodes[to].x, nodes[to].y));
 	}
 
-	point first(){
+	Point first(){
 		return points[0];
 	}
 
-	point midpoint(){
-		return points[(int)points.size()/2];
+	Point midpoint(){
+		return points[0] * 0.5 + last() * 0.5;
 	}
 
-	point last(){
-		return points[points.size()-1];
+	Point last(){
+		return points.back();
 	}
 
 	void updatePoints(int count){
-		if (points.size() == count + 2) return;
-		// double len = 0;
-		// for (int i = 1; i < points.size(); i++){
-		// 	point p = points[i] - before;
-		// 	len += p.length;
-		// 	before = points[i];
-		// }
-		double step = length / (count+1);
-		vector<point> pointsNew;
-		pointsNew.push_back(first());
-		double currLength = 0;
-		double nextLength = step;
-		point before = first();
-		for (int i = 1; i < points.size(); i++){
-			point p = points[i] - before;
-			if (currLength + p.length > nextLength){
-				double size = nextLength - currLength;
-				pointsNew.push_back(point(before.x + p.normX*size, before.y + p.normY*size));
-				nextLength += step;
-				i--;
-			} else {
-				before = points[i];
-				currLength += p.length;
-			}
+		int prevCount = points.size();
+
+		// avoid emplace?
+		for (int i = 1; i < prevCount; i++){
+			Point insert = points[2*i-2]*0.5 + points[2*i-1]*0.5;
+			points.emplace(points.begin() + 2*i-1, insert.x, insert.y);
 		}
-		pointsNew.push_back(last());
-		points = pointsNew;
-		before = first();
-		length = 0;
-		for (int i = 1; i < points.size(); i++){
-			point p = points[i] - before;
-			length += p.length;
-			before = points[i];
+
+		for (int i = 0; i < count; i++){
+			directions[i] = Direction();
 		}
+
+		// this is maybe wrong :(
+		// maybe update this with sum of segment lengths
+		kp = (count+1) / length;
 	}
 
-	void movePoints(vector<point> directions, double step){
-		for (int i = 1; i < points.size()-1; i++){
-			points[i] += directions[i-1].normalized() * step;
-		}
-		point before = first();
-		length = 0;
-		for (int i = 1; i < points.size(); i++){
-			point p = points[i] - before;
-			length += p.length;
-			before = points[i];
+	void movePoints(double count, double step){
+		for (int i = 0; i < count; i++) {
+			points[i+1] += (directions[i] * step).point();
+			directions[i] = Direction();
 		}
 	}
 };
 
-double Ca(edge p, edge q, int i){
-	return abs((p.points[i].x * q.points[i].x + p.points[i].y - q.points[i].y) / (p.length * q.length));
+double Ca(Edge p, Edge q){
+	return abs((p.dirX * q.dirX + p.dirY * q.dirY) / (p.length * q.length));
 }
 
-double Cs(edge p, edge q){
+double Cs(Edge p, Edge q){
 	double l = (p.length + q.length)/2;
-	return 2 / (l * min(p.length, q.length) + max(p.length, q.length) / l);
+	return 2 / (min(p.length, q.length)/l + max(p.length, q.length) / l);
 }
 
-double Cp(edge p, edge q){
+double Cp(Edge p, Edge q){
 	double l = (p.length + q.length)/2;
-	int m = p.points.size()/2;
-	double x = p.points[m].x - q.points[m].x;
-	double y = p.points[m].y - q.points[m].y;
-	return l / (l + sqrt(x*x + y*y));
+	Direction x = p.midpoint() - q.midpoint();
+	return l / (l + x.length);
 }
 
-double V(edge p, edge q){
-	point pm = p.midpoint();
-	if (p.dirX > p.dirY){
-		double x = 1;
-		double y = p.dirY / p.dirX;
-		point i0(0, 0), i1(0, 0);
-		if (q.first().x > q.last().x){
-			i0.x = q.last().x;
-			i0.y = y * q.last().x;
-			i1.x = q.first().x;
-			i1.y = y * q.first().x;
-		} else {
-			i0.x = q.first().x;
-			i0.y = y * q.first().x;
-			i1.x = q.last().x;
-			i1.y = y * q.last().x;
-		}
-		point im(i0.x + (i1.x - i0.x)/2, i0.y + (i1.y - i0.y)/2);
-		point a(pm.x - im.x, pm.y - im.y);
-		point b(i0.x - i1.x, i0.y - i1.y);
-		return max(1 - ((2 * sqrt(a.x*a.x + a.y*a.y))/(sqrt(b.x*b.x + b.y*b.y))), 0.);
-	} else {
-		double y = 1;
-		double x = p.dirX / p.dirY;
-		point i0(0, 0), i1(0, 0);
-		if (q.first().y > q.last().y){
-			i0.x = x * q.last().y;
-			i0.y = q.last().y;
-			i1.x = x * q.first().y;
-			i1.y = q.first().y;
-		} else {
-			i0.x = x * q.first().y;
-			i0.y = q.first().y;
-			i1.x = x * q.last().y;
-			i1.y = q.last().y;
-		}
-		point im(i0.x + (i1.x - i0.x)/2, i0.y + (i1.y - i0.y)/2);
-		point a(pm.x - im.x, pm.y - im.y);
-		point b(i0.x - i1.x, i0.y - i1.y);
-		return max(1 - ((2 * sqrt(a.x*a.x + a.y*a.y))/(sqrt(b.x*b.x + b.y*b.y))), 0.);
-	}
+double V(Edge p, Edge q){
+	Point p0 = p.first();
+	Point q0 = q.first(), q1 = q.last(), qm = q.midpoint();
+	double size = p.dir.normX*q.normal.normY - p.dir.normY*q.normal.normX;
+	double t0 = (q.normal.normY*(q0.x - p0.x) + q.normal.normX*(p0.y - q0.y)) / size;
+	double t1 = (q.normal.normY*(q1.x - p0.x) + q.normal.normX*(p0.y - q1.y)) / size;
+	double tm = (q.normal.normY*(qm.x - p0.x) + q.normal.normX*(p0.y - qm.y)) / size;
+	Point i0 = p0 + Point(p.dir.normX*t0, p.dir.normY*t0);
+	Point i1 = p0 + Point(p.dir.normX*t1, p.dir.normY*t1);
+	Point im = p0 + Point(p.dir.normX*tm, p.dir.normY*tm);
+	return max(1 - (2 * Direction(p.midpoint() - im).length) / Direction(i0 - i1).length, 0.0);
 }
 
-double Cv(edge p, edge q){
+double Cv(Edge p, Edge q){
 	return min(V(p, q), V(q, p));
 }
 
-double Ce(edge p, edge q, int i){
-	return Ca(p, q, i) * Cs(p, q) * Cp(p, q);
+double Ce(Edge p, Edge q){
+	//double ca = Ca(p, q), cs = Cs(p,q), cp = Cp(p,q), cv = Cv(p,q);
+	// double ret = ca*cs*cp*cv;
+	// cout << "Ca: " << ca << ", Cs: " << cs << ", Cp: " << cp << ", Cv: " << cv << ", ret: " << ret << endl;
+	return Ca(p, q)*Cs(p,q)*Cp(p,q)*Cv(p,q);
 }
 
 void iterate(int cycles){
-	vector<int> P = {1, 2, 4, 8, 16, 32};
+	int edgeCount = edges.size();
+	double *compatibilities = new double[edgeCount*edgeCount];
+	cout << "Calculating compatibilities..." << endl;
+	#pragma omp parallel for
+	for (int p = 0; p < edgeCount; p++) {
+		for (int q = p; q < edgeCount; q++) {
+			// We don't want to be affected by the same Edge.
+			if (p == q) {
+				compatibilities[p*edgeCount + q] = 0;
+				continue;
+			};
+			double compatibility = Ce(edges[p], edges[q]);
+			compatibilities[p*edgeCount + q] = compatibility;
+			compatibilities[q*edgeCount + p] = compatibility;
+		}
+	}
+	cout << "Starting FDEB..." << endl;
+	vector<int> P = {1, 3, 7, 15, 31, 63};
 	vector<int> I = {50, 33, 22, 15, 9, 7};
 	vector<double> S = {0.4, 0.02, 0.01, 0.005, 0.0025, 0.00125};
 	// Cyclus that changes parameters.
 	for (int cycle = 0; cycle < cycles && cycle < 6; cycle++){
-		cout << "cycle: " << cycle << endl;
+		std::cout << "cycle: " << cycle << endl;
 		// Recalculates positions of points because count of points has changed.
-		for (auto &&e : edges){
-			e.updatePoints(P[cycle]);
+		for (int i = 0; i < edgeCount; i++){
+			edges[i].updatePoints(P[cycle]);
 		}
 		// Iterations of algorithm
 		for (int i = 0; i < I[cycle]; i++){
-			cout << "iteration: " << i + 1 << "/"<< I[cycle] << endl;
-			// Stores the directions where should every subpoint of edge move.
-			vector<vector<point>> directions;
-			for (int p = 0; p < edges.size(); p++){
-				directions.push_back(vector<point>(P[cycle], point(0, 0)));
-				for (int q = 0; q < edges.size(); q++){
-					for (int j = 0; j < P[cycle]; j++){
-						if (p == q) continue; // We don't want to be affected by the same edge.
-						double compatibility = Ce(edges[p], edges[q], j);
-						if (compatibility < 0.05) continue; // Threshhold so it will ignore almost irelevant edges.
-						point dir = edges[q].points[j] - edges[p].points[j]; // Direction between subpoints.
-						dir = dir.normalized() * compatibility; // Direction between subpoints but normalized and scaled by compatibility.
-						directions[p][j] += dir;
-					}					
+			std::cout << "iteration: " << i + 1 << "/"<< I[cycle] << endl;
+			// Stores the directions where should every subpoint of Edge move.
+			for (int p = 0; p < edgeCount; p++){
+				for (int q = 0; q < edgeCount; q++) {
+					// We don't want to be affected by the same Edge.
+					if (p == q) continue;
+					// this can be calculated one per Edge at start j is not important
+					double compatibility = compatibilities[q*edgeCount + p];
+					// Threshhold so it will ignore almost irelevant edges.
+					if(compatibility < 0.05) continue;
+					for (int j = 0; j < P[cycle]; j++) {
+						// Direction between subpoints.
+						Direction dir = Direction(edges[q].points[j+1] - edges[p].points[j+1]);
+						if(abs(dir.x) < 0.5 && abs(dir.y) < 0.5){
+							continue;
+						}
+						// Direction between subpoints but normalized and scaled by compatibility.
+						dir = dir.normalized() * (compatibility / dir.length);
+						edges[p].directions[j] += dir;
+					}
+				}
+				// Add forces by adjusting points on line
+				for (int j = 0; j < P[cycle]; j++) {
+					Direction dirMinus = edges[p].points[j] - edges[p].points[j+1];
+					Direction dirPlus = edges[p].points[j+2] - edges[p].points[j+1];
+					edges[p].directions[j] += (dirMinus+dirPlus) * edges[p].kp;
 				}
 			}
 			// Apply directions scaled by S.
-			for (int p = 0; p < edges.size(); p++){
-				edges[p].movePoints(directions[p], S[cycle]);
+			for (int p = 0; p < edgeCount; p++){
+				edges[p].movePoints(P[cycle], S[cycle]);
 			}
 		}
 		
 	}
+	delete []compatibilities;
+}
+
+const string WHITESPACE = " \n\r\t\f\v";
+ 
+string ltrim(const std::string &s)
+{
+    size_t start = s.find_first_not_of(WHITESPACE);
+    return (start == string::npos) ? "" : s.substr(start);
+}
+ 
+string rtrim(const std::string &s)
+{
+    size_t end = s.find_last_not_of(WHITESPACE);
+    return (end == string::npos) ? "" : s.substr(0, end + 1);
+}
+ 
+string trim(const string &s) {
+    return rtrim(ltrim(s));
 }
 
 int main(){
@@ -264,45 +293,54 @@ int main(){
 	if (in.is_open()){
 		string line;
 		while (getline(in, line)){
-			if (line == "    <!-- nodes -->\r"){
+			line = trim(line);
+			if (line.find("<!-- nodes -->") != string::npos){
 				getline(in, line);
-				while (line != "\r"){
+				while (line != ""){
 					int id;
 					double x = 0, y = 0;
 					string tooltip(100, ' ');
-					sscanf(line.c_str(), "    <node id=\"%d\">", &id);
+					sscanf(line.c_str(), "<node id=\"%d\">", &id);
 					getline(in, line);
-					sscanf(line.c_str(), "      <data key=\"x\">%lf</data>", &x);
+					line = trim(line);
+					sscanf(line.c_str(), "<data key=\"x\">%lf</data>", &x);
 					getline(in, line);
-					sscanf(line.c_str(), "      <data key=\"tooltip\">%s %*u</data>", tooltip.data());
+					line = trim(line);
+					sscanf(line.c_str(), "<data key=\"tooltip\">%s %*u</data>", tooltip.data());
 					getline(in, line);
-					sscanf(line.c_str(), "      <data key=\"y\">%lf</data>", &y);
+					line = trim(line);
+					sscanf(line.c_str(), "<data key=\"y\">%lf</data>", &y);
+					// x *= 0.1; 
+					// y *= -1; 
 					// cout << x << " " << y << " " << tooltip.c_str() << endl;
-					nodes.push_back(node(id, x, y, tooltip));
+					nodes.push_back(Node(id, x, y, tooltip));
 					if (minX > x) minX = x;
 					if (maxX < x) maxX = x;
 					if (minY > y) minY = y;
 					if (maxY < y) maxY = y;
 					getline(in, line);
 					getline(in, line);
+					line = trim(line);
 				}
 			}
-			if (line == "    <!-- edges -->\r"){
+			if (line.find("<!-- edges -->") != string::npos){
 				getline(in, line);
-				while (line != "  </graph>\r"){
+				line = trim(line);
+				while (line.find("</graph>") == string::npos){
 					int id, source, target;
-					sscanf(line.c_str(), "    <edge id=\"%d\" source=\"%d\" target=\"%d\">", &id, &source, &target);
+					sscanf(line.c_str(), "<edge id=\"%d\" source=\"%d\" target=\"%d\">", &id, &source, &target);
 					// cout << id << " " << source << " " << target << endl;
-					edges.push_back(edge(id, source, target));
+					edges.push_back(Edge(id, source, target));
 					getline(in, line);
 					getline(in, line);
+					line = trim(line);
 				}
 			}
 			
-    	}
+    }
 		in.close();
 	} else {
-		cout << "Unable to open file" << endl;
+		std::cout << "Unable to open file" << endl;
 		return 404;
 	}
 
@@ -312,6 +350,7 @@ int main(){
 
 	double xShift = -minX + 10, yShift = -minY + 10;
 	int width = maxX + xShift + 10, height = maxY + yShift + 10;
+
 	stbi_uc* img = (stbi_uc*)calloc(width * height * 3, sizeof(stbi_uc));
 	for (int y = 0; y < height; y++){
 		for (int x = 0; x < width; x++){
@@ -320,29 +359,47 @@ int main(){
 			img[coord(x, y, 2, width)] = 255;
 		}
 	}
+	cout << minX << " " << minY << " " << maxX << " " << maxY << endl;
 	for (int i = 0; i < 10; i++){
-		for (point p : edges[i].points){
+		int color = 0;
+		for (Point &p : edges[i].points){
 			int xCoord = p.x + xShift, yCoord = p.y + yShift;
 			for (int y = -1; y < 2; y++){
 				for (int x = -1; x < 2; x++){
-					img[coord(xCoord + x, yCoord + y, 0, width)] = 0;
-					img[coord(xCoord + x, yCoord + y, 1, width)] = 0;
-					img[coord(xCoord + x, yCoord + y, 2, width)] = 255;
+				img[coord(xCoord+x, yCoord+y, 0, width)] = color*3;
+				img[coord(xCoord+x, yCoord+y, 1, width)] = color*3;
+				img[coord(xCoord+x, yCoord+y, 2, width)] = color*3;
 				}
 			}
+			color++;
 		}
 	}
 	
-	
-	for (node n : nodes){
-		int xCoord = n.x + xShift, yCoord = n.y + yShift;
+	int counter = 0;
+	for (int i = 0; i < nodes.size(); i++){
+		int xCoord = nodes[i].x + xShift, yCoord = nodes[i].y + yShift;
 		for (int y = -1; y < 2; y++){
 			for (int x = -1; x < 2; x++){
 				img[coord(xCoord + x, yCoord + y, 1, width)] = 0;
 				img[coord(xCoord + x, yCoord + y, 2, width)] = 0;
+				if(edges[0].from == i || edges[0].to == i){
+					img[coord(xCoord + x, yCoord + y, 1, width)] = 0;
+					img[coord(xCoord + x, yCoord + y, 2, width)] = 255;
+					img[coord(xCoord + x, yCoord + y, 3, width)] = 0;
+				}
 			}
 		}
+		counter++;
 	}
+
+	ofstream outputFile("new_data.txt");
+	for (int i = 0; i < edges.size(); i++){
+		for (Point &p : edges[i].points){
+			outputFile << p.x << "," << p.y << ";";
+		}
+		outputFile << endl;
+	}
+	outputFile.close();
 	
 	stbi_write_png("image.png", width, height, 3, img, 0);
 
