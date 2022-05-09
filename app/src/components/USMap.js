@@ -3,111 +3,79 @@ import * as d3 from "d3";
 import us from "../data/us.json";
 import { difference, dot, size } from "../utils";
 
-const projection = d3.geoConicConformal().scale(1600).rotate([109, 5]);
-const geoGenerator = d3.geoPath().projection(projection);
+const MAP = "us-states"
+const AIRPORTS = "airports"
+const FLIGHTS = "flights"
 
 class USMap extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {
-      selectedState: null,
-    };
     this.svg = null
+    this.state = {
+      geoPath: d3.geoPath().projection(props.projection),
+    }
   }
 
-  parseAirportData = async (data) => {
-    const airtravel = await data.text()
-    const parser = new DOMParser();
-    const airtravelDoc = parser.parseFromString(airtravel, "text/xml")
-    
-    const airportsData = []
-    const routesData = []
+  drawUSMap = () => {
+    d3.select(`#${MAP}`)
+      .selectAll("path")
+      .data(us.features.filter(f => f.properties.NAME !== "Alaska" && f.properties.NAME !== "Hawaii" && f.properties.NAME !== "Puerto Rico"))
+      .join("path")
+      .attr("id", (d) => d.properties.NAME)
+      .attr("d", this.state.geoPath)
+      .append("title").text((d) => d.properties.NAME);
+  }
 
-    const airportsElements = airtravelDoc.getElementsByTagName("node")
-    const routesElements= airtravelDoc.getElementsByTagName("edge")
-    
-    for (let i = 0; i < airportsElements.length; i++) {
-      const airport = airportsElements[i]
-      const x = parseFloat(airport.querySelector('[key="x"]').innerHTML)*0.1
-      const y = parseFloat(airport.querySelector('[key="y"]').innerHTML)*(-0.1)
-      const code = airport.querySelector('[key="tooltip"]').innerHTML.substring(0,3)
-      airportsData.push({ position: projection([x,y],), code, size: 0, index: i })
-    }
-    let maxSize = 0
-    for (let i = 0; i < routesElements.length; i++) {
-      const route = routesElements[i]
-      route.getAttribute("source")
-      const A = parseInt(route.getAttribute("source"))
-      const B = parseInt(route.getAttribute("target"))
-      airportsData[A].size++;
-      airportsData[B].size++;
-      routesData.push({source: A, target: B, sourcePostion: airportsData[A].position, targetPostion: airportsData[B].position})
-      maxSize = Math.max(A, B, maxSize)
-    }
+  drawFlightGraph = () => {
+    const { airports, flights, maxSize} = this.props;
+    const drawFlight = d3.line().curve(d3.curveLinear);
 
-    airportsData.sort((a,b) =>  b.size - a.size)
-
-    const root = this.svg.selectChild()
-
-    const routes = root.append("g")
-      .attr("id", "routes")
-      .selectAll("line")
-      .data(routesData)
-      .join("line")
+    const flightsSVG = d3.select(`#${FLIGHTS}`)
+      .selectAll("path")
+      .data(flights)
+      .join("path")
+      .attr("d", d => drawFlight(d.points))
+      .attr('fill', 'none')
       .style("stroke", (d) => {
-        const dir = difference(d.targetPostion, d.sourcePostion)
+        const dir = difference(airports[d.A].pos, airports[d.B].pos)
         const i = (1 + dot(dir , [1, 0])/size(dir))/2
         d.color = d3.interpolateRainbow(i)
         return d.color
-      })
-      .attr("x1", (d) => d.sourcePostion[0])
-      .attr("y1", (d) => d.sourcePostion[1])
-      .attr("x2", (d) => d.targetPostion[0])
-      .attr("y2", (d) => d.targetPostion[1])
-      .on("load", function(e, d) {
-        console.log(d3.select(this))
-        airportsData[d.source].routes.merge(d3.select(this))
-        airportsData[d.target].routes.merge(d3.select(this))
-      })
+      });
 
-    for (let i = 0; i < airportsData.length; i++) {
-      const airport = airportsData[i]
-      airport.routes = routes.filter(d => d.source === airport.index || d.target === airport.index)
-      airport.routesInverse = routes.filter(d => d.source !== airport.index && d.target !== airport.index)
+    for (let i = 0; i < airports.length; i++) {
+      const airport = airports[i]
+      airport.routes = flightsSVG.filter(d => d.A === airport.id || d.B === airport.id)
+      airport.routesInverse = flightsSVG.filter(d => d.A !== airport.id && d.B !== airport.id)
     }
 
-    const airports = root
-      .append("g")
-      .attr("id", "airports")
+    d3.select(`#${AIRPORTS}`)
       .selectAll("circle")
-      .data(airportsData)
+      .data(airports)
       .join("circle")
       .attr("r", (d) => Math.sqrt(d.size / Math.PI)*2)
-      .attr("cx", (d) => d.position[0])
-      .attr("cy", (d) => d.position[1])
-      .style("fill", (d) => { 
+      .attr("cx", (d) => d.pos[0])
+      .attr("cy", (d) => d.pos[1])
+      .style("fill", (d) => {
         d.color = d3.interpolateViridis((d.size - 1) / maxSize)
         return d.color
       })
       .on("mouseover", function(e,d) {
         d3.select(this).style("fill", "red");
-        d.routes.style("stroke", "red")
+        //d.routes.style("stroke", "red")
         d.routesInverse.style("opacity", 0.1)
       })                  
       .on("mouseout", function(e, d) {
         d3.select(this).style("fill", d.color);
-        d.routes.style("stroke", (l) => l.color)
+        // d.routes.style("stroke", (l) => l.color)
         d.routesInverse.style("opacity", 1)
-      });
+      })
+      .append("title").text((d) => d.code)
     
-    airports.append("title").text((d) => d.code);
   }
 
   componentDidMount() {
-    window.addEventListener('resize', this.setSize);
-
     const root = this.svg.append("g");
-
     this.zoom = d3
       .zoom()
       .scaleExtent([1, 10])
@@ -116,19 +84,17 @@ class USMap extends React.Component {
         root.attr("transform", transform);
         root.attr("stroke-width", 1 / transform.k);
       });
-
-    const states = root
-      .append("g")
-      .attr("id", "us-states")
-      .selectAll("path")
-      .data(us.features.filter(f => f.properties.NAME !== "Alaska" && f.properties.NAME !== "Hawaii" && f.properties.NAME !== "Puerto Rico"))
-      .join("path")
-      .attr("id", (d) => d.properties.name)
-      .attr("d", geoGenerator);
-
-    states.append("title").text((d) => d.properties.name);
     
-    const map = document.querySelector('#us-map')
+    root.append("g").attr("id", MAP).classed("us-map", true);
+    const airData = root.append("g").attr("id", "air-travel")
+    airData.append("g").attr("id", FLIGHTS).classed("flights", true);
+    airData.append("g").attr("id", AIRPORTS).classed("airports", true);
+
+    this.drawUSMap()
+    this.drawFlightGraph()
+    
+    // Set initial offset to center
+    const map = document.querySelector('#visualization')
     const {x, y, width: wBB, height: hBB } = map.getBBox()
     const {width, height} = getComputedStyle(map)
 
@@ -136,15 +102,19 @@ class USMap extends React.Component {
     const offsetY = -y + (parseInt(height.replace('px', ''))  - hBB)/2;
 
     this.svg.call(this.zoom).call(this.zoom.transform, d3.zoomIdentity.translate(offsetX, offsetY));
-
-    fetch("/airlines.graphml").then(this.parseAirportData);
   }
+
+  componentDidUpdate() {
+    this.drawUSMap()
+    this.drawFlightGraph()
+  }
+
 
   render() {
     return (
       <svg
-        id="us-map"
-        className="us-map"
+        id="visualization"
+        className="visualization"
         ref={(element) => (this.svg = d3.select(element))}
       ></svg>
     );
