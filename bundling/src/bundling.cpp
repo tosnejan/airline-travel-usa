@@ -1,174 +1,30 @@
-#include "stb/stb.h"
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <set>
 #include <string>
-#include <math.h>
+#include <cmath>
+
+#include "utils.hpp"
+#include "models.hpp"
+
 using namespace std;
-#define coord(x, y, c, w) ((y)*w*3 + (x)*3 + c)
 
-class Edge;
-class Node;
-
-vector<Edge> edges;
-vector<Node> nodes;
 set<int>* foundEdges;
 
-double magnitude(double x, double y){
-	return sqrt(x*x + y*y);
-}
-
-class Point{
-public:
-	double x, y;
-	Point(){
-		this->x = 0;
-		this->y = 0;
-	}
-	Point(double x, double y){
-		this->x = x;
-		this->y = y;
-	}
-	inline Point operator- (const Point other) const { return Point(x - other.x, y - other.y); }
-	inline Point operator+ (const Point &other) const { return Point(x + other.x, y + other.y); }
-	inline void operator+= (const Point &other) { 
-		x += other.x;
-		y += other.y;
-	}
-	inline Point operator* (const double other) const { return Point(x * other, y * other); }
-	inline void operator*= (const double other) { 
-		x *= other;
-		y *= other;
-	}
-};
-
-class Direction
-{
-public:
-	double x,y;
-	double length;
-	double normX, normY;
-	Direction() {
-		this->x = 0;
-		this->y = 0;
-	}
-	Direction(double x, double y) {
-		this->x = x;
-		this->y = y;
-		size();
-		normX = x / length;
-		normY = y / length;
-	}
-	Direction(Point p) {
-		x = p.x;
-		y = p.y;
-		length = sqrt(x*x + y*y);
-		normX = x / length;
-		normY = y / length;
-	}
-	inline double size() {
-		length = sqrt(x*x + y*y);
-		return length;
-	}
-	inline Direction normalized(){
-		double l = size();
-		return Direction(x/l, y/l);
-	}
-	inline Point point(){
-		return Point(x,y);
-	}
-	inline Direction operator- (const Direction other) const { return Direction(x - other.x, y - other.y); }
-	inline Direction operator+ (const Direction &other) const { return Direction(x + other.x, y + other.y); }
-	inline void operator+= (const Direction &other) { 
-		x += other.x;
-		y += other.y;
-	}
-	inline Direction operator* (const double other) const { return Direction(x * other, y * other); }
-	inline void operator*= (const double other) { 
-		x *= other;
-		y *= other;
-	}
-};
-
-
-class Node{
-public:
-	int id;
-	int arrivals = 0;
-	int departures = 0;
-	double x;
-	double y;
-	string tooltip;
-	Node(int id, double x, double y, string tooltip) : id(id), x(x), y(y), tooltip(tooltip){}
-};
-
-class Edge{ 
-public:
-	int id;
-	int from;
-	int to;
-	double length;
-	double kp;
-	Direction dir;
-	Direction normal;
-	vector<Point> points;
-	vector<Direction> directions = vector<Direction>(63);
-	Edge(int id, int from, int to): id(id), from(from), to(to) {
-		dir = Direction(nodes[to].x - nodes[from].x, nodes[to].y - nodes[from].y);
-		normal = Direction(dir.y, -dir.x);
-		length = magnitude(dir.x, dir.y);
-		kp = 2 / length;
-		points.reserve(65);
-		points.push_back(Point(nodes[from].x, nodes[from].y));
-		points.push_back(Point(nodes[to].x, nodes[to].y));
-	}
-
-	Point first(){
-		return points[0];
-	}
-
-	Point midpoint(){
-		return points[0] * 0.5 + last() * 0.5;
-	}
-
-	Point last(){
-		return points.back();
-	}
-
-	void updatePoints(int count){
-		int prevCount = points.size();
-
-		// avoid emplace?
-		for (int i = 1; i < prevCount; i++){
-			Point insert = points[2*i-2]*0.5 + points[2*i-1]*0.5;
-			points.emplace(points.begin() + 2*i-1, insert.x, insert.y);
-		}
-
-		for (int i = 0; i < count; i++){
-			directions[i] = Direction();
-		}
-
-		// this is maybe wrong :(
-		// maybe update this with sum of segment lengths
-		kp = (count+1) / (length);
-	}
-
-	void movePoints(double count, double step){
-		for (int i = 0; i < count; i++) {
-			points[i+1] += (directions[i] * step).point();
-			directions[i] = Direction();
-		}
-	}
-};
+int P[] = {1, 3, 7, 15, 31, 63};
+int I[] = {50, 33, 22, 15, 9, 7};
+double S[] = {0.04, 0.02, 0.01, 0.005, 0.0025, 0.00125};
 
 double Ca(Edge &p, Edge &q){
-	return abs((p.dir.x * q.dir.x + p.dir.y * q.dir.y) / (p.length * q.length));
+	return abs((p.dir.x * q.dir.x + p.dir.y * q.dir.y) / (p.dir.length * q.dir.length));
 }
 
 double Cs(Edge &p, Edge &q){
 	double avg = (p.length + q.length)/2;
-	return 2 / (min(p.length, q.length)/avg + max(p.length, q.length) / avg);
+	double _min = min(p.length, q.length);
+	double _max = max(p.length, q.length);
+	return (2*avg*avg)/((_min*_min) + (_max*_max));
 }
 
 double Cp(Edge &p, Edge &q){
@@ -219,9 +75,6 @@ void iterate(int cycles){
 		}
 	}
 	cout << "Starting FDEB..." << endl;
-	vector<int> P = {1, 3, 7, 15, 31, 63};
-	vector<int> I = {50, 33, 22, 15, 9, 7};
-	vector<double> S = {0.4, 0.02, 0.01, 0.005, 0.0025, 0.00125};
 	// Cyclus that changes parameters.
 	for (int cycle = 0; cycle < cycles && cycle < 6; cycle++){
 		std::cout << "cycle: " << cycle << endl;
@@ -233,6 +86,7 @@ void iterate(int cycles){
 		for (int i = 0; i < I[cycle]; i++){
 			std::cout << "iteration: " << i + 1 << "/"<< I[cycle] << endl;
 			// Stores the directions where should every subpoint of Edge move.
+			#pragma omp parallel for
 			for (int p = 0; p < edgeCount; p++){
 				for (int q = 0; q < edgeCount; q++) {
 					// We don't want to be affected by the same Edge.
@@ -244,12 +98,11 @@ void iterate(int cycles){
 					for (int j = 0; j < P[cycle]; j++) {
 						// Direction between subpoints.
 						Direction dir = Direction(edges[q].points[j+1] - edges[p].points[j+1]);
-						if(abs(dir.x) < 0.5 && abs(dir.y) < 0.5){
+						if(abs(dir.x) < 0.01 && abs(dir.y) < 0.01){
 							continue;
 						}
 						// Direction between subpoints but normalized and scaled by compatibility.
-						dir = dir.normalized() * (compatibility / dir.length);
-						edges[p].directions[j] += dir;
+						edges[p].directions[j] += dir * (compatibility / (dir.length* dir.length));
 					}
 				}
 				// Add forces by adjusting points on line
@@ -269,28 +122,9 @@ void iterate(int cycles){
 	delete []compatibilities;
 }
 
-const string WHITESPACE = " \n\r\t\f\v";
- 
-string ltrim(const std::string &s)
-{
-    size_t start = s.find_first_not_of(WHITESPACE);
-    return (start == string::npos) ? "" : s.substr(start);
-}
- 
-string rtrim(const std::string &s)
-{
-    size_t end = s.find_last_not_of(WHITESPACE);
-    return (end == string::npos) ? "" : s.substr(0, end + 1);
-}
- 
-string trim(const string &s) {
-    return rtrim(ltrim(s));
-}
-
-int main(){
+int main(int argc, char**argv){
 	set<int>* foundEdges = new set<int>[nodes.size()];
 	ifstream in("airlines.graphml");
-	double minX = 10000, minY = 10000, maxX = -10000, maxY = -10000;
 	if (in.is_open()){
 		string line;
 		while (getline(in, line)){
@@ -312,11 +146,7 @@ int main(){
 					line = trim(line);
 					sscanf(line.c_str(), "<data key=\"y\">%lf</data>", &y);
 					// cout << x << " " << y << " " << tooltip.c_str() << endl;
-					nodes.push_back(Node(id, x, y, tooltip));
-					if (minX > x) minX = x;
-					if (maxX < x) maxX = x;
-					if (minY > y) minY = y;
-					if (maxY < y) maxY = y;
+					nodes.push_back(Node(id, x*0.1, y*(-0.1), tooltip));
 					getline(in, line);
 					getline(in, line);
 					line = trim(line);
@@ -332,12 +162,13 @@ int main(){
 					sscanf(line.c_str(), "<edge id=\"%d\" source=\"%d\" target=\"%d\">", &id, &source, &target);
 					nodes[target].arrivals++;
 					nodes[source].departures++;
+					edges.push_back(Edge(edgeCounter++, source, target));
 					// Edges are sorted by source
-					if(foundEdges[source].find(target) == foundEdges[source].end() && 
+					/* if(foundEdges[source].find(target) == foundEdges[source].end() && 
 							foundEdges[target].find(source) == foundEdges[target].end()) {
 						edges.push_back(Edge(edgeCounter++, source, target));
 						foundEdges[target].insert(source);
-					}
+					} */
 					getline(in, line);
 					getline(in, line);
 					line = trim(line);
@@ -352,52 +183,49 @@ int main(){
 		return 404;
 	}
 
-	iterate(5);
+	int iterations = 5;
 
-	// Here should be saving to file.
-
-	double xShift = -minX + 10, yShift = -minY + 10;
-	int width = maxX + xShift + 10, height = maxY + yShift + 10;
-
-	stbi_uc* img = (stbi_uc*)calloc(width * height * 3, sizeof(stbi_uc));
-	for (int y = 0; y < height; y++){
-		for (int x = 0; x < width; x++){
-			img[coord(x, y, 0, width)] = 255;
-			img[coord(x, y, 1, width)] = 255;
-			img[coord(x, y, 2, width)] = 255;
-		}
+	if(argc > 1) {
+		iterations = atoi(argv[1]);
+		iterations = max(1,min(6, iterations));
 	}
-	cout << minX << " " << minY << " " << maxX << " " << maxY << endl;
-	for (int i = 0; i < 10; i++){
-		int color = 0;
-		for (Point &p : edges[i].points){
-			int xCoord = p.x + xShift, yCoord = p.y + yShift;
-			for (int y = -1; y < 2; y++){
-				for (int x = -1; x < 2; x++){
-				img[coord(xCoord+x, yCoord+y, 0, width)] = color*3;
-				img[coord(xCoord+x, yCoord+y, 1, width)] = color*3;
-				img[coord(xCoord+x, yCoord+y, 2, width)] = color*3;
-				}
-			}
-			color++;
-		}
+
+	double sigma = 0;
+
+	if(argc > 2) {
+		sigma = atof(argv[2]);
+		if(sigma > 0)
+			sigma = P[iterations-1] * 0.25 * max(0.0,min(1.0, sigma));
 	}
-	
-	int counter = 0;
-	for (int i = 0; i < nodes.size(); i++){
-		int xCoord = nodes[i].x + xShift, yCoord = nodes[i].y + yShift;
-		for (int y = -1; y < 2; y++){
-			for (int x = -1; x < 2; x++){
-				img[coord(xCoord + x, yCoord + y, 1, width)] = 0;
-				img[coord(xCoord + x, yCoord + y, 2, width)] = 0;
-				if(edges[0].from == i || edges[0].to == i){
-					img[coord(xCoord + x, yCoord + y, 1, width)] = 0;
-					img[coord(xCoord + x, yCoord + y, 2, width)] = 255;
-					img[coord(xCoord + x, yCoord + y, 3, width)] = 0;
+
+	iterate(iterations);
+
+	cout << "Iterations: " << iterations << endl;
+	cout << "Gaussian blur sigma: " << sigma << endl;
+
+	if(sigma > 0){
+		vector<double> kernel = gauss_kernel_1d(sigma);
+		int kernelSize = kernel.size();
+		cout << kernelSize << endl;
+		int center = kernelSize / 2;
+		for(Edge &e: edges){
+			int pointsNum = e.points.size();
+			vector<Point> gaussed;
+			gaussed.push_back(e.points[0]);
+			for(int i = 1; i < pointsNum - 1; i++){
+				Point insert;
+				for (int u = -center; u <= center; u++)
+				{
+					int x = i + u;
+					x = x < 0 ? 0 : x;
+					x = x >= pointsNum ? pointsNum-1 : x;
+					insert += e.points[x] * kernel[center + u];
 				}
+				gaussed.push_back(insert);
 			}
+			gaussed.push_back(e.points[pointsNum-1]);
+			e.points = gaussed;
 		}
-		counter++;
 	}
 
 	ofstream outputFile("airports-data.json");
@@ -410,7 +238,7 @@ int main(){
 		outputFile << "\"code\": " << "\"" << n.tooltip.substr(0, 3) << "\"" << ", ";
 		outputFile << "\"dep\": " << n.departures << ", ";
 		outputFile << "\"arr\": " << n.arrivals << ", ";
-		outputFile << "\"pos\": [" << (n.x *0.1) << ", "  << (n.y * (-0.1)) <<"]";
+		outputFile << "\"pos\": [" << n.x << ", "  << n.y <<"]";
 		outputFile << "}" << (nodes.size() - 1 != n.id ? "," : "") << "\n";
 	}
 	outputFile << "], \n";
@@ -422,7 +250,7 @@ int main(){
 		outputFile << "\"t\": " << e.to << ", ";
 		outputFile << "\"line\": ["; 
 		for(int i = 0; i < (int)e.points.size(); i++){
-			outputFile << "[" << (e.points[i].x * 0.1) << ", "  << (e.points[i].y * (-0.1)) <<"]";
+			outputFile << "[" << e.points[i].x << ", "  << e.points[i].y <<"]";
 			outputFile << (e.points.size() - 1 != i ? ", " : "");
 		}
 		outputFile << "]";
@@ -432,10 +260,4 @@ int main(){
 	// JSON end
 	outputFile << "}\n";
 	outputFile.close();
-
-	
-	stbi_write_png("image.png", width, height, 3, img, 0);
-
-	stbi_image_free(img);
-
 }

@@ -62,12 +62,12 @@ class USMap extends React.Component {
       })
       .on("mouseover", function(e,d) {
         d3.select(this).style("fill", "red");
-        d.routes.style("stroke", "red")
+        //d.routes.style("stroke", "red")
         d.routesInverse.style("opacity", 0.1)
       })                  
       .on("mouseout", function(e, d) {
         d3.select(this).style("fill", d.color);
-        d.routes.style("stroke", (l) => l.color)
+        // d.routes.style("stroke", (l) => l.color)
         d.routesInverse.style("opacity", 1)
       })
       .append("title").text((d) => d.code)
