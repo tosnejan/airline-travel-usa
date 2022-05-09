@@ -16,6 +16,7 @@ class MainContainer extends Component {
         maxSize: 0,
       },
       flights: [],
+      checked: []
     }
   }
   
@@ -42,13 +43,17 @@ class MainContainer extends Component {
     this.setState({airportsData: {airports, maxSize}, flights})
   }
 
+  setChecked(arr){
+    this.setState({highlighted : arr});
+  }
+
   render() {
-    const { projection, airportsData, flights } = this.state;
+    const { projection, airportsData, flights, highlighted } = this.state;
     const  {airports, maxSize } = airportsData;
     return (<div className="page">
-      <USMap projection={projection} airports={airports} flights={flights} maxSize={maxSize} />
+      <USMap projection={projection} airports={airports} flights={flights} maxSize={maxSize} highlighted={highlighted} />
       <div className="sidebarCompact">
-        <Sidebar/>
+        <Sidebar airports={airports} flights={flights} setChecked={this.setChecked.bind(this)} />
         <SidebarButton/>
       </div>
     </div>);

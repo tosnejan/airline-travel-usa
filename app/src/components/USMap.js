@@ -109,7 +109,6 @@ class USMap extends React.Component {
     this.drawFlightGraph()
   }
 
-
   render() {
     return (
       <svg

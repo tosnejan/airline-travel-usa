@@ -11,7 +11,7 @@ class Navbar extends Component {
     let img = document.getElementById("airplane");
     img.addEventListener('click', e => {
       window.location.hash = '';
-      window.history.replaceState(null,  '', window.location.href.split('#')[0]);
+      window.history.replaceState(null,  '', window.location.pathname);
     });
 	}
 

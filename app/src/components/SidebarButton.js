@@ -19,9 +19,9 @@ class SidebarButton extends Component {
       }
       this.forceUpdate();
       if (this.visible) {
-          document.body.classList.add('menu-visible');
+        document.body.classList.remove('menu-hidden');
       } else {
-          document.body.classList.remove('menu-visible');
+        document.body.classList.add('menu-hidden');
       }
     })   
 	}

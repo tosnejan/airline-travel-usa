@@ -21,7 +21,7 @@ class Searchbar extends Component {
 		let iatas = {};
 
 		for (const key in dataFile) {
-			if (dataFile[key].iata != null && dataFile[key].iata != '' && dataFile[key].iata != '0') {
+			if (dataFile[key].iata !== null && dataFile[key].iata !== '' && dataFile[key].iata !== '0') {
 				iatas[dataFile[key].iata] = dataFile[key];
 				this.airports.push(dataFile[key]);
 			}
@@ -30,7 +30,7 @@ class Searchbar extends Component {
 		for (let i = 0; i < airportsElements.length; i++) {
 		  const airport = airportsElements[i]
 		  const code = airport.querySelector('[key="tooltip"]').innerHTML.substring(0,3)
-		  if(iatas[code] != null){
+		  if(iatas[code] !== null){
 			  this.airportNames.push(iatas[code].name)
 		  }
 		}
@@ -49,7 +49,7 @@ class Searchbar extends Component {
 		const searchbarReference = this;
 		/*execute a function when someone writes in the text field:*/
 		inp.addEventListener("focus", function(e) {
-			searchbarReference.setState({active: true})
+			searchbarReference.setState({inputValue: this.value, active: true})
 		});
 		inp.addEventListener("input", function(e) {
 			currentFocus = -1;
@@ -98,6 +98,7 @@ class Searchbar extends Component {
 		/*execute a function when someone clicks in the document:*/
 		document.addEventListener("click", function (e) {
 			if (e.target !== inp) {
+				inp.value = "";
 				searchbarReference.setState({active: false})
 			}
 		});
@@ -111,10 +112,9 @@ class Searchbar extends Component {
 				d.addEventListener("click", (e) => {
 					/*insert the value for the autocomplete text field:*/
 					const val = d.getElementsByTagName("input")[0].value;
-					this.inp.value = val;
-					this.setState({inputValue: val});
-					this.setState({active: false});
+					this.setState({inputValue: val, active: false});
 					window.location.hash = val.replaceAll(' ', '+');
+					this.inp.value = val;
 	
 					// if ('URLSearchParams' in window) {
 					// 	var searchParams = new URLSearchParams(window.location.search);
@@ -136,7 +136,6 @@ class Searchbar extends Component {
 		if(found.length === 0) return;
 		let arr = [];
 		for (let i = 0; i < found.length; i++) {
-			const element = found[i];
 			arr.push(
 				<div key={i} className="autocomplete-item">
 					<strong>{found[i].substr(0, val.length)}</strong>
