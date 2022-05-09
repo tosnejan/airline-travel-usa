@@ -23,9 +23,7 @@ class SidebarButton extends Component {
       } else {
           document.body.classList.remove('menu-visible');
       }
-    })
-
-    
+    })   
 	}
 
   render() {

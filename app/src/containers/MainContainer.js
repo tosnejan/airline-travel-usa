@@ -8,7 +8,7 @@ class MainContainer extends Component {
     return (<div className="page">
       <USMap />
       <div className="sidebarCompact">
-        <Sidebar />
+        <Sidebar/>
         <SidebarButton/>
       </div>
     </div>);
