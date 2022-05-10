@@ -10,7 +10,7 @@ class MainContainer extends Component {
   constructor(props) {
     super(props)
     this.state = {
-      projection: d3.geoConicConformal().scale(1600).rotate([109, 5]),
+      projection: d3.geoProjection(this.getConformalConicProjection(1, 33, 45, 39.8, -98.6)).scale(1600).rotate([0,5]),
       airportsData: {
         airports: [],
         maxSize: 0,
@@ -18,6 +18,27 @@ class MainContainer extends Component {
       flights: [],
       checked: []
     }
+  }
+
+  getConformalConicProjection(R, sp1, sp2, ref_lat, ref_lon) {
+    const { PI, log, pow, tan, cos, sin} = Math;
+    const PI_4 = PI / 4;
+    const radians = PI / 180.0;
+    sp1 = sp1 * radians;
+    sp2 = sp2 * radians;
+    ref_lat = ref_lat * radians;
+    ref_lon = ref_lon * radians;
+    const n = sp1 !== sp2 ? log(cos(sp1) / cos(sp2)) / log(tan(PI_4 + 0.5*sp2) / tan(PI_4 + 0.5*sp1)) : sin(sp1);
+    const F = (cos(sp1) * pow(tan(PI_4 + 0.5*sp1), n)) / n;
+    const ro_ref = (R*F) / pow(tan(PI_4 + 0.5*ref_lat), n);
+    const projection = (lon, lat) => {
+      const ro = (R*F) / pow(tan(PI_4 + 0.5*lat), n);
+      const theta = n*(lon-ref_lon);
+      const x = ro*sin(theta);
+      const y = ro_ref - ro*cos(theta);
+      return [x, y];
+    };
+    return projection;
   }
   
   componentDidMount() {

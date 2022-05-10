@@ -1,3 +1,6 @@
+#ifndef __MODELS_HPP__
+#define __MODELS_HPP__
+
 #include <cmath>
 using namespace std;
 
@@ -105,9 +108,8 @@ public:
 	Edge(int id, int from, int to): id(id), from(from), to(to) {
 		dir = Direction(nodes[to].x - nodes[from].x, nodes[to].y - nodes[from].y);
 		normal = Direction(dir.y, -dir.x);
-		length = magnitude(dir.x, dir.y);
+		length = sqrt(dir.x*dir.x + dir.y*dir.y);
 		kp = 2 / length;
-		points.reserve(65);
 		points.push_back(Point(nodes[from].x, nodes[from].y));
 		points.push_back(Point(nodes[to].x, nodes[to].y));
 	}
@@ -127,11 +129,15 @@ public:
 	void updatePoints(int count){
 		int prevCount = points.size();
 
-		// avoid emplace?
+		vector<Point> subdevided;
+		subdevided.push_back(points[0]);
 		for (int i = 1; i < prevCount; i++){
-			Point insert = points[2*i-2]*0.5 + points[2*i-1]*0.5;
-			points.emplace(points.begin() + 2*i-1, insert.x, insert.y);
+			Point insert = points[i-1]*0.5 + points[i]*0.5;
+			subdevided.push_back(insert);
+			subdevided.push_back(points[i]);
 		}
+		subdevided.push_back(points[prevCount-1]);
+		this->points = subdevided;
 
 		for (int i = 0; i < count; i++){
 			directions[i] = Direction();
@@ -143,14 +149,11 @@ public:
 	}
 
 	void movePoints(double count, double step){
-		double l = 0;
 		for (int i = 0; i < count; i++) {
 			points[i+1] += (directions[i] * step).point();
 			directions[i] = Direction();
-			l += Direction(points[i] - points[i+1]).length;
 		}
-		l += Direction(points[count] - points[count+1]).length;
-		length = l;
-		kp = (count+1) / (length);
 	}
 };
+
+#endif // __MODELS_HPP__
