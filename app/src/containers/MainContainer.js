@@ -68,6 +68,10 @@ class MainContainer extends Component {
     this.setState({highlighted : arr, airportID : id});
   }
 
+  setAirportID(id){
+    this.setState({airportID : id});
+  }
+
   customForceUpdate(){
     this.forceUpdate();
   }
@@ -75,11 +79,10 @@ class MainContainer extends Component {
   render() {
     const { projection, airportsData, flights, highlighted, airportID } = this.state;
     const  {airports, maxSize } = airportsData;
-    console.log("reference", airportID);
     return (<div className="page">
       <USMap projection={projection} airports={airports} flights={flights} maxSize={maxSize} highlighted={highlighted} airportID={airportID}/>
       <div className="sidebarCompact">
-        <Sidebar airports={airports} flights={flights} setReferences={this.setReferences.bind(this)} update={this.customForceUpdate.bind(this)} />
+        <Sidebar airports={airports} flights={flights} setReferences={this.setReferences.bind(this)} setAirportID={this.setAirportID.bind(this)} update={this.customForceUpdate.bind(this)} />
         <SidebarButton/>
       </div>
     </div>);

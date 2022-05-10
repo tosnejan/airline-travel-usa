@@ -1,6 +1,7 @@
 import React from "react";
 import * as d3 from "d3";
 import us from "../data/us.json";
+import dataFile from "../data/airports.json";
 import { difference, dot, size } from "../utils";
 
 const MAP = "us-states"
@@ -14,6 +15,12 @@ class USMap extends React.Component {
     this.state = {
       geoPath: d3.geoPath().projection(props.projection),
     }
+    this.airportsInfo = [];
+    for (const key in dataFile) {
+			if (dataFile[key].iata !== null && dataFile[key].iata !== '' && dataFile[key].iata !== '0') {
+				this.airportsInfo.push(dataFile[key]);
+			}
+		}
   }
 
   drawUSMap = () => {
@@ -27,7 +34,7 @@ class USMap extends React.Component {
   }
 
   drawFlightGraph = () => {
-    const { airports, flights, maxSize} = this.props;
+    const { airports, flights, maxSize, highlighted, airportID} = this.props;
     const drawFlight = d3.line().curve(d3.curveLinear);
 
     const flightsSVG = d3.select(`#${FLIGHTS}`)
@@ -65,32 +72,37 @@ class USMap extends React.Component {
       .on("mouseover", function(e,d) {
         d3.select(this).style("fill", "red");
         //d.routes.style("stroke", "red")
-        d.routesInverse.style("opacity", 0.1)
+        d.routesInverse.style("stroke", "grey");
+        d.routesInverse.style("opacity", 0.1);
       })                  
       .on("mouseout", function(e, d) {
-        d3.select(this).style("fill", d.color);
+        console.log(d.id)
+        if(d.id !== airportID) d3.select(this).style("fill", d.color);
         // d.routes.style("stroke", (l) => l.color)
-        d.routesInverse.style("opacity", 1)
-      })
-      .append("title").text((d) => d.code);
-    // const airportsSVG = d3.select(`#${AIRPORTS}`)
-    // .selectAll("circle")
-    // .data(airports)
-    // .join("circle")
+        if(airportID === -1) d.routesInverse.style("opacity", 1);
+        else {
+          let routes = flightsSVG.filter(d => highlighted.includes(d.id));
+          routes.style("stroke", "red");
+          routes.style("opacity", 1);
+          routes.style("stroke-width", 1);
+          routes.raise();
+        }
+      }).on("click", (e) => {
+        let name = e.target.firstChild.textContent;
+        window.location.hash = name.replaceAll(' ', '+');
+      }
+
+      )
+      .append("title").text((d) => this.airportsInfo.find(el => el.iata === d.code).name);
     this.highlight(flightsSVG, airportsSVG);
   }
 
   highlight(flightsSVG, airportsSVG){
     const { highlighted, airportID } = this.props;
-    let airport = airportsSVG.filter(d => d.id === 136);
-    airport.style("fill", "red");
-    // if(airportID !== -1){
-    //   d3.select(`#${AIRPORTS}`)
-    //   console.log(airportsSVG);
-    //   console.log(airportID);
-    //   let airport = airportsSVG.filter(d => d.id === 136);
-    //   airport.style("fill", "red");
-    // }
+    if(airportID !== -1){
+      d3.select(`#${AIRPORTS}`)
+      .selectAll("circle").filter(d => d.id === airportID).style("fill", "red");
+    }
     if(highlighted === undefined) return;
     if(highlighted.length === 0) {
       flightsSVG.style("stroke", "grey");
@@ -108,10 +120,6 @@ class USMap extends React.Component {
       routesInverse.style("stroke", "grey");
       routesInverse.style("opacity", 0.1);
     }
-    // for (let i = 0; i < flights.length; i++) {
-    //   const flight = flights[i]
-    // }
-
   }
 
   componentDidMount() {

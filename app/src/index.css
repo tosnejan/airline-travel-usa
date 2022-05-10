@@ -297,6 +297,12 @@ body.menu-hidden .visualization {
   font-weight: bold;
 }
 
-.highlighted {
-  stroke: orange;
+.flights path[mouseHighlight=false] {
+  stroke-width: 1;
+  stroke: blue;
+}
+
+.flights path[mouseHighlight=true] {
+  stroke-width: 1;
+  stroke: red;
 }
