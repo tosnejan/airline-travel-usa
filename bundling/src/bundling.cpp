@@ -91,11 +91,11 @@ void iterate(int cycles){
 					// this can be calculated one per Edge at start j is not important
 					double compatibility = compatibilities[q*edgeCount + p];
 					// Threshhold so it will ignore almost irelevant edges.
-					if(compatibility < 0.05) continue;
+					if(compatibility < 0.3) continue;
 					for (int j = 0; j < P[cycle]; j++) {
 						// Direction between subpoints.
 						Direction dir = Direction(edges[q].points[j+1] - edges[p].points[j+1]);
-						if(abs(dir.x) < 0.01 && abs(dir.y) < 0.01){
+						if(abs(dir.x) < 0.1 && abs(dir.y) < 0.1){
 							continue;
 						}
 						// Direction between subpoints but normalized and scaled by compatibility.
