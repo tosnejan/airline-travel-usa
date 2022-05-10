@@ -241,7 +241,7 @@ body.menu-hidden .visualization {
 }
 
 .flights line {
-  stroke-width: 0.5;
+  stroke-width: 1;
 }
 .searchBar {
   width: 100%;

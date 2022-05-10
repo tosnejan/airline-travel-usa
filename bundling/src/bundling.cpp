@@ -21,10 +21,7 @@ double Ca(Edge &p, Edge &q){
 }
 
 double Cs(Edge &p, Edge &q){
-	double avg = (p.length + q.length)/2;
-	double _min = min(p.length, q.length);
-	double _max = max(p.length, q.length);
-	return (2*avg*avg)/((_min*_min) + (_max*_max));
+	return pow(1 - (abs(p.length - q.length) / (p.length + q.length)), 2);
 }
 
 double Cp(Edge &p, Edge &q){
@@ -51,9 +48,9 @@ double Cv(Edge &p, Edge &q){
 }
 
 double Ce(Edge &p, Edge &q){
-	//double ca = Ca(p, q), cs = Cs(p,q), cp = Cp(p,q), cv = Cv(p,q);
-	// double ret = ca*cs*cp*cv;
-	// cout << "Ca: " << ca << ", Cs: " << cs << ", Cp: " << cp << ", Cv: " << cv << ", ret: " << ret << endl;
+	/* double ca = Ca(p, q), cs = Cs(p,q), cp = Cp(p,q), cv = Cv(p,q);
+	double ret = ca*cs*cp*cv;
+	cout << "Ca: " << ca << ", Cs: " << cs << ", Cp: " << cp << ", Cv: " << cv << ", ret: " << ret << endl; */
 	return Ca(p, q)*Cs(p,q)*Cp(p,q)*Cv(p,q);
 }
 
@@ -94,11 +91,11 @@ void iterate(int cycles){
 					// this can be calculated one per Edge at start j is not important
 					double compatibility = compatibilities[q*edgeCount + p];
 					// Threshhold so it will ignore almost irelevant edges.
-					if(compatibility < 0.05) continue;
+					if(compatibility < 0.3) continue;
 					for (int j = 0; j < P[cycle]; j++) {
 						// Direction between subpoints.
 						Direction dir = Direction(edges[q].points[j+1] - edges[p].points[j+1]);
-						if(abs(dir.x) < 0.01 && abs(dir.y) < 0.01){
+						if(abs(dir.x) < 0.1 && abs(dir.y) < 0.1){
 							continue;
 						}
 						// Direction between subpoints but normalized and scaled by compatibility.
@@ -145,8 +142,10 @@ int main(int argc, char**argv){
 					getline(in, line);
 					line = trim(line);
 					sscanf(line.c_str(), "<data key=\"y\">%lf</data>", &y);
-					// cout << x << " " << y << " " << tooltip.c_str() << endl;
-					nodes.push_back(Node(id, x*0.1, y*(-0.1), tooltip));
+					// cout << "1) " <<x*0.1 << " " << y*(-0.1) << " " << tooltip.c_str() << endl;
+					Point p = conformalConicProjection(x*0.1, y*(-0.1));
+					nodes.push_back(Node(id, p.x, p.y, tooltip));
+					// cout << "2) " << p.x << " " << p.y << " " << tooltip.c_str() << endl;
 					getline(in, line);
 					getline(in, line);
 					line = trim(line);
@@ -201,7 +200,7 @@ int main(int argc, char**argv){
 	iterate(iterations);
 
 	cout << "Iterations: " << iterations << endl;
-	cout << "Gaussian blur sigma: " << sigma << endl;
+	cout << "Gaussian smoothing sigma: " << sigma << endl;
 
 	if(sigma > 0){
 		vector<double> kernel = gauss_kernel_1d(sigma);
@@ -238,7 +237,8 @@ int main(int argc, char**argv){
 		outputFile << "\"code\": " << "\"" << n.tooltip.substr(0, 3) << "\"" << ", ";
 		outputFile << "\"dep\": " << n.departures << ", ";
 		outputFile << "\"arr\": " << n.arrivals << ", ";
-		outputFile << "\"pos\": [" << n.x << ", "  << n.y <<"]";
+		Point inverse = inverseConformalConicProjection(n.x, n.y);
+		outputFile << "\"pos\": [" << inverse.x << ", "  << inverse.y <<"]";
 		outputFile << "}" << (nodes.size() - 1 != n.id ? "," : "") << "\n";
 	}
 	outputFile << "], \n";
@@ -250,7 +250,8 @@ int main(int argc, char**argv){
 		outputFile << "\"t\": " << e.to << ", ";
 		outputFile << "\"line\": ["; 
 		for(int i = 0; i < (int)e.points.size(); i++){
-			outputFile << "[" << e.points[i].x << ", "  << e.points[i].y <<"]";
+			Point inverse = inverseConformalConicProjection(e.points[i].x, e.points[i].y);
+			outputFile << "[" << inverse.x << ", "  << inverse.y <<"]";
 			outputFile << (e.points.size() - 1 != i ? ", " : "");
 		}
 		outputFile << "]";
