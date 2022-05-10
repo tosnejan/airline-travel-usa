@@ -43,19 +43,21 @@ class USMap extends React.Component {
         return d.color
       });
 
+
     for (let i = 0; i < airports.length; i++) {
       const airport = airports[i]
       airport.routes = flightsSVG.filter(d => d.A === airport.id || d.B === airport.id)
       airport.routesInverse = flightsSVG.filter(d => d.A !== airport.id && d.B !== airport.id)
     }
 
-    d3.select(`#${AIRPORTS}`)
+    const airportsSVG = d3.select(`#${AIRPORTS}`)
       .selectAll("circle")
       .data(airports)
       .join("circle")
       .attr("r", (d) => Math.sqrt(d.size / Math.PI)*2)
       .attr("cx", (d) => d.pos[0])
       .attr("cy", (d) => d.pos[1])
+      .classed("highlighted", true)
       .style("fill", (d) => {
         d.color = d3.interpolateViridis((d.size - 1) / maxSize)
         return d.color
@@ -70,8 +72,46 @@ class USMap extends React.Component {
         // d.routes.style("stroke", (l) => l.color)
         d.routesInverse.style("opacity", 1)
       })
-      .append("title").text((d) => d.code)
-    
+      .append("title").text((d) => d.code);
+    // const airportsSVG = d3.select(`#${AIRPORTS}`)
+    // .selectAll("circle")
+    // .data(airports)
+    // .join("circle")
+    this.highlight(flightsSVG, airportsSVG);
+  }
+
+  highlight(flightsSVG, airportsSVG){
+    const { highlighted, airportID } = this.props;
+    let airport = airportsSVG.filter(d => d.id === 136);
+    airport.style("fill", "red");
+    // if(airportID !== -1){
+    //   d3.select(`#${AIRPORTS}`)
+    //   console.log(airportsSVG);
+    //   console.log(airportID);
+    //   let airport = airportsSVG.filter(d => d.id === 136);
+    //   airport.style("fill", "red");
+    // }
+    if(highlighted === undefined) return;
+    if(highlighted.length === 0) {
+      flightsSVG.style("stroke", "grey");
+      flightsSVG.style("opacity", 0.1);
+    } else if(highlighted.length === 1 && highlighted[0] === -1) {
+      flightsSVG.style("stroke", (l) => l.color);
+      flightsSVG.style("opacity", 1);
+    } else {
+      let routes = flightsSVG.filter(d => highlighted.includes(d.id));
+      let routesInverse = flightsSVG.filter(d => !highlighted.includes(d.id));
+      routes.style("stroke", "red");
+      routes.style("opacity", 1);
+      routes.style("stroke-width", 1);
+      routes.raise();
+      routesInverse.style("stroke", "grey");
+      routesInverse.style("opacity", 0.1);
+    }
+    // for (let i = 0; i < flights.length; i++) {
+    //   const flight = flights[i]
+    // }
+
   }
 
   componentDidMount() {

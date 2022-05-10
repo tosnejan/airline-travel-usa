@@ -21,7 +21,7 @@ class MainContainer extends Component {
   }
   
   componentDidMount() {
-    const { projection } = this.state
+    const { projection } = this.state;
     let maxSize = 0;
     const airports = rawAirportsData.nodes.map(n => {
       const size = n.dep + n.arr
@@ -43,17 +43,22 @@ class MainContainer extends Component {
     this.setState({airportsData: {airports, maxSize}, flights})
   }
 
-  setChecked(arr){
-    this.setState({highlighted : arr});
+  setReferences(arr, id){
+    this.setState({highlighted : arr, airportID : id});
+  }
+
+  customForceUpdate(){
+    this.forceUpdate();
   }
 
   render() {
-    const { projection, airportsData, flights, highlighted } = this.state;
+    const { projection, airportsData, flights, highlighted, airportID } = this.state;
     const  {airports, maxSize } = airportsData;
+    console.log("reference", airportID);
     return (<div className="page">
-      <USMap projection={projection} airports={airports} flights={flights} maxSize={maxSize} highlighted={highlighted} />
+      <USMap projection={projection} airports={airports} flights={flights} maxSize={maxSize} highlighted={highlighted} airportID={airportID}/>
       <div className="sidebarCompact">
-        <Sidebar airports={airports} flights={flights} setChecked={this.setChecked.bind(this)} />
+        <Sidebar airports={airports} flights={flights} setReferences={this.setReferences.bind(this)} update={this.customForceUpdate.bind(this)} />
         <SidebarButton/>
       </div>
     </div>);
