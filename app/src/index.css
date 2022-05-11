@@ -23,6 +23,7 @@ code {
   background-color: rgb(148, 148, 148);
   display: flex;
   align-items: center;
+  justify-content: space-between;
 }
 
 #navbarTitle {
@@ -221,7 +222,7 @@ body.menu-hidden .sidebarCompact {
 .visualization {
   position: absolute;
   left: max(22% , 300px );
-  width: 80%;
+  width: 78%;
   height: 100%;
   transition: width 0.5s ease-out, left 0.5s ease-out;
 }
@@ -305,4 +306,8 @@ body.menu-hidden .visualization {
 .flights path[mouseHighlight=true] {
   stroke-width: 1;
   stroke: red;
+}
+
+#downloadButton {
+  margin-right: 20px;
 }
