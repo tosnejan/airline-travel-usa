@@ -76,7 +76,6 @@ class USMap extends React.Component {
         d.routesInverse.style("opacity", 0.1);
       })                  
       .on("mouseout", function(e, d) {
-        console.log(d.id)
         if(d.id !== airportID) d3.select(this).style("fill", d.color);
         // d.routes.style("stroke", (l) => l.color)
         if(airportID === -1) d.routesInverse.style("opacity", 1);

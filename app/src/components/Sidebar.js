@@ -30,13 +30,25 @@ class Sidebar extends Component {
     window.removeEventListener('hashchange', this.route);
   }
 
-  componentDidUpdate(){
-    this.route();
+  // componentDidUpdate(){
+  //   this.route();
+  // }
+
+  routeToMainPage(){
+    window.history.replaceState(null, '', window.location.pathname);
+    document.title = "USA airport visualization";
+    this.checkedID.length = 0;
+    this.checkedID.push(-1);
+    this.currentAirportID = -1;
+    this.setState({airport : null, edges : null});
+    this.props.setAirportID(this.currentAirportID);
   }
 
   route(e) {
     const url = new URL(window.location.href);
-    if(url.hash){
+    if(url.hash === "#main"){
+      this.routeToMainPage();
+    } else if(url.hash){
       const airport = url.hash.substring(1).replaceAll('+', ' ');
       if(this.state.airport === null || airport !== this.state.airport.name || this.state.edges === null){
         document.title = airport;
@@ -72,12 +84,7 @@ class Sidebar extends Component {
       }
     } else {
       if(document.title !== "USA airport visualization"){
-        document.title = "USA airport visualization";
-        this.checkedID.length = 0;
-        this.checkedID.push(-1);
-        this.currentAirportID = -1;
-        this.setState({airport : null, edges : null});
-        this.props.setAirportID(this.currentAirportID);
+        this.routeToMainPage();
       }
     }
   }
@@ -92,16 +99,14 @@ class Sidebar extends Component {
     } else {
       const index = this.checkedID.indexOf(this.indexToID[id]);
       if (index > -1) {
-        this.checkedID.splice(index, 1); // 2nd parameter means remove one item only
+        this.checkedID.splice(index, 1);
       }
-      // this.checkedID = this.checkedID.filter(el => el !== this.indexToID[id]);
     }
     this.props.update();
-    // this.props.setChecked(this.checkedID);
   }
 
   renderInfo(){
-    if(this.state.airport === null) return <div className="info"/>;
+    if(this.state.airport === null) return;
     return (
     <div className="info">
       <p id="airportName">{this.state.airport.name}</p>
@@ -113,14 +118,21 @@ class Sidebar extends Component {
   }
 
   renderScroll(){
-    if(this.state.edges === null || this.state.edges === undefined) return <div className="info"/>;
+    if(this.state.edges === null || this.state.edges === undefined) return (
+      <div className="frontPage">
+        <p>{"Routes connected to an airport can be highlighted by hovering over it or by searching it."}</p>
+        <p>{"You can select the airport by clicking on it or you can use the search bar."}</p>
+        <p>{`When you hover over some airport, it will highlight routes that are highlighted at the time and are connected to this airport. 
+            This functionality can be used for highlighting routes between two airports by searching the first one and hovering over the second one.`}</p>
+        <p>{"When you have some airport selected, you can modify what connections you want to see in this sidebar."}</p>
+        <p id="footer">{"Made by Jan Tošner and Jakub Peleška."}</p>
+      </div>);
 		let arr = [];
 		for (let i = 0; i < this.state.edges.length; i++) {
 			arr.push(
 				<label key={i} className="container">
           {this.state.edges[i]}
           <input index={i} className="checkbox" type="checkbox" checked={this.state.checked[i]} onChange={(e) => this.setChecked(e)}></input>
-          {/* <input index={i} className="checkbox" type="checkbox" checked={this.state.checked[i]} onChange={(e) => this.setChecked(e)}></input> */}
           <span className="checkmark"></span>
 				</label>)
 		}

@@ -291,6 +291,18 @@ body.menu-hidden .visualization {
   flex: 0 1 auto;
 }
 
+.frontPage {
+  margin-top: 50px;
+  padding: 20px;
+  top: 50px;
+  height: 100%;
+}
+
+.frontPage #footer {
+  position: absolute;
+  bottom: 0;
+}
+
 #airportName {
   margin: 0 0 0 0;
   width: 100%;
