@@ -7,7 +7,7 @@ class Sidebar extends Component {
 		this.state = {airport : null, edges : null, checked : []};
     this.airports = [];
     this.flights = this.props.flights;
-    this.checkedID = [-1];
+    this.checkedID = [];
     this.indexToID = [];
     this.currentAirportID = -1;
     let dataFile = require('../data/airports.json');
@@ -60,8 +60,8 @@ class Sidebar extends Component {
             if(c && !cities.includes(c.name)) {
               cities.push(c.name);
               checked.push(true);
-              this.checkedID.push(element.id);
-              this.indexToID.push(element.id);
+              this.checkedID.push(element);
+              this.indexToID.push(element);
             }
           }
           this.setState({airport : airportObject, edges : cities, checked : checked});
@@ -74,7 +74,6 @@ class Sidebar extends Component {
       if(document.title !== "USA airport visualization"){
         document.title = "USA airport visualization";
         this.checkedID.length = 0;
-        this.checkedID.push(-1);
         this.currentAirportID = -1;
         this.setState({airport : null, edges : null});
         this.props.setAirportID(this.currentAirportID);
@@ -85,6 +84,7 @@ class Sidebar extends Component {
   setChecked(e){
     let id = e.target.getAttribute("index");
     let checked = this.state.checked;
+    
     checked[id] = !this.state.checked[id];
     this.setState({checked : checked});
     if(checked[id]){

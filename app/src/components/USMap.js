@@ -14,6 +14,7 @@ class USMap extends React.Component {
     this.svg = null
     this.state = {
       geoPath: d3.geoPath().projection(props.projection),
+      hovered: -1,
     }
     this.airportsInfo = [];
     for (const key in dataFile) {
@@ -34,7 +35,8 @@ class USMap extends React.Component {
   }
 
   drawFlightGraph = () => {
-    const { airports, flights, maxSize, highlighted, airportID} = this.props;
+    const {hovered} = this.state;
+    const { airports, flights, selectedFlights, selectedAirport} = this.props;
     const drawFlight = d3.line().curve(d3.curveLinear);
 
     const flightsSVG = d3.select(`#${FLIGHTS}`)
@@ -43,13 +45,24 @@ class USMap extends React.Component {
       .join("path")
       .attr("d", d => drawFlight(d.points))
       .attr('fill', 'none')
-      .style("stroke", (d) => {
+      .attr("focused", false)
+      .attr("hide", (d) => selectedFlights.length && !selectedFlights.includes(d))
+      .filter((d) => {
+        if(selectedAirport !== -1 && hovered !== -1) {
+          return (d.A === hovered ||  d.B === hovered) && selectedFlights.includes(d)
+        } else if (selectedAirport !== -1 ){
+          return selectedFlights.includes(d)
+        }
+        return false
+      })
+      .attr("focused", true)
+      .raise()
+      /* .style("stroke", (d) => {
         const dir = difference(airports[d.A].pos, airports[d.B].pos)
         const i = (1 + dot(dir , [1, 0])/size(dir))/2
-        d.color = d3.interpolateRainbow(i)
+        d.color = d3.interpolateCool(1-Math.abs(i))
         return d.color
-      });
-
+      }); */
 
     for (let i = 0; i < airports.length; i++) {
       const airport = airports[i]
@@ -57,69 +70,29 @@ class USMap extends React.Component {
       airport.routesInverse = flightsSVG.filter(d => d.A !== airport.id && d.B !== airport.id)
     }
 
-    const airportsSVG = d3.select(`#${AIRPORTS}`)
+    d3.select(`#${AIRPORTS}`)
       .selectAll("circle")
       .data(airports)
       .join("circle")
       .attr("r", (d) => Math.sqrt(d.size / Math.PI)*2)
       .attr("cx", (d) => d.pos[0])
       .attr("cy", (d) => d.pos[1])
-      .classed("highlighted", true)
-      .style("fill", (d) => {
-        d.color = d3.interpolateViridis((d.size - 1) / maxSize)
-        return d.color
-      })
-      .on("mouseover", function(e,d) {
-        d3.select(this).style("fill", "red");
-        //d.routes.style("stroke", "red")
-        d.routesInverse.style("stroke", "grey");
-        d.routesInverse.style("opacity", 0.1);
+      .attr("connected", (d) => selectedFlights.some((f) => f.A === d.id || f.B === d.id))
+      .attr("focused", (d) => selectedAirport === d.id || hovered === d.id)
+      .on("mouseover", (e,d) => {
+        d3.select(e.target).attr("focused", true);
+        this.setState({hovered: d.id})
       })                  
-      .on("mouseout", function(e, d) {
-        console.log(d.id)
-        if(d.id !== airportID) d3.select(this).style("fill", d.color);
-        // d.routes.style("stroke", (l) => l.color)
-        if(airportID === -1) d.routesInverse.style("opacity", 1);
-        else {
-          let routes = flightsSVG.filter(d => highlighted.includes(d.id));
-          routes.style("stroke", "red");
-          routes.style("opacity", 1);
-          routes.style("stroke-width", 1);
-          routes.raise();
+      .on("mouseout", (e, d) => {
+        if(d.id !== selectedAirport) {
+          d3.select(e.target).attr("focused", false);
         }
+        this.setState({ hovered: -1 })
       }).on("click", (e) => {
         let name = e.target.firstChild.textContent;
         window.location.hash = name.replaceAll(' ', '+');
-      }
-
-      )
+      })
       .append("title").text((d) => this.airportsInfo.find(el => el.iata === d.code).name);
-    this.highlight(flightsSVG, airportsSVG);
-  }
-
-  highlight(flightsSVG, airportsSVG){
-    const { highlighted, airportID } = this.props;
-    if(airportID !== -1){
-      d3.select(`#${AIRPORTS}`)
-      .selectAll("circle").filter(d => d.id === airportID).style("fill", "red");
-    }
-    if(highlighted === undefined) return;
-    if(highlighted.length === 0) {
-      flightsSVG.style("stroke", "grey");
-      flightsSVG.style("opacity", 0.1);
-    } else if(highlighted.length === 1 && highlighted[0] === -1) {
-      flightsSVG.style("stroke", (l) => l.color);
-      flightsSVG.style("opacity", 1);
-    } else {
-      let routes = flightsSVG.filter(d => highlighted.includes(d.id));
-      let routesInverse = flightsSVG.filter(d => !highlighted.includes(d.id));
-      routes.style("stroke", "red");
-      routes.style("opacity", 1);
-      routes.style("stroke-width", 1);
-      routes.raise();
-      routesInverse.style("stroke", "grey");
-      routesInverse.style("opacity", 0.1);
-    }
   }
 
   componentDidMount() {
@@ -130,7 +103,6 @@ class USMap extends React.Component {
       .on("zoom", (event) => {
         const { transform } = event;
         root.attr("transform", transform);
-        root.attr("stroke-width", 1 / transform.k);
       });
     
     root.append("g").attr("id", MAP).classed("us-map", true);
@@ -153,7 +125,6 @@ class USMap extends React.Component {
   }
 
   componentDidUpdate() {
-    this.drawUSMap()
     this.drawFlightGraph()
   }
 

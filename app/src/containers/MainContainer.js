@@ -16,7 +16,7 @@ class MainContainer extends Component {
         maxSize: 0,
       },
       flights: [],
-      checked: []
+      selectedAirport: -1,
     }
   }
 
@@ -64,25 +64,37 @@ class MainContainer extends Component {
     this.setState({airportsData: {airports, maxSize}, flights})
   }
 
-  setReferences(arr, id){
-    this.setState({highlighted : arr, airportID : id});
+  setReferences = (arr, id) => {
+    this.setState({ selectedFlights : arr, selectedAirport : id });
   }
 
-  setAirportID(id){
-    this.setState({airportID : id});
+  setAirportID = (id) => {
+    this.setState({selectedAirport : id});
   }
 
-  customForceUpdate(){
+  customForceUpdate = () => {
     this.forceUpdate();
   }
 
   render() {
-    const { projection, airportsData, flights, highlighted, airportID } = this.state;
-    const  {airports, maxSize } = airportsData;
+    const { projection, airportsData, flights, selectedFlights, selectedAirport } = this.state;
+    const  {airports } = airportsData;
     return (<div className="page">
-      <USMap projection={projection} airports={airports} flights={flights} maxSize={maxSize} highlighted={highlighted} airportID={airportID}/>
+      <USMap 
+        projection={projection} 
+        airports={airports} 
+        flights={flights} 
+        selectedFlights={selectedFlights} 
+        selectedAirport={selectedAirport}
+      />
       <div className="sidebarCompact">
-        <Sidebar airports={airports} flights={flights} setReferences={this.setReferences.bind(this)} setAirportID={this.setAirportID.bind(this)} update={this.customForceUpdate.bind(this)} />
+        <Sidebar 
+          airports={airports} 
+          flights={flights} 
+          setReferences={this.setReferences} 
+          setAirportID={this.setAirportID} 
+          update={this.customForceUpdate} 
+        />
         <SidebarButton/>
       </div>
     </div>);
