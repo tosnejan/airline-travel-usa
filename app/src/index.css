@@ -219,6 +219,11 @@ body.menu-hidden .sidebarCompact {
   transform: rotate(45deg);
 }
 
+body.menu-hidden .visualization {
+  width: 100%;
+  left: 0;
+}
+
 .visualization {
   position: absolute;
   left: max(22% , 300px );
@@ -227,23 +232,46 @@ body.menu-hidden .sidebarCompact {
   transition: width 0.5s ease-out, left 0.5s ease-out;
 }
 
-body.menu-hidden .visualization {
-  width: 100%;
-  left: 0;
-}
-
 .us-map path {
   fill: rgb(148, 148, 148);
   stroke: rgb(180, 180, 180);
 }
 
-.airports circle {
-  stroke-width: 1;
+.airports circle[focused=false]  {
+  fill: rgb(21, 65, 131);
 }
 
-.flights line {
-  stroke-width: 1;
+.airports circle[connected=true] {
+  fill: rgb(128, 12, 12);
 }
+
+.airports circle[focused=true] {
+  fill: rgb(255, 27, 27);
+}
+
+#airportName {
+  margin: 0 0 0 0;
+  width: 100%;
+  font-size: x-large;
+  font-weight: bold;
+}
+
+.flights path {
+  stroke-width: 1;
+  stroke: rgb(85, 106, 139);
+  opacity: 0.4;
+}
+
+.flights path[focused=true] {
+  stroke-width: 1.3;
+  stroke: rgb(194, 70, 70);
+  opacity: 1;
+}
+
+.flights path[hide=true] {
+  stroke: rgb(122, 122, 122);
+}
+
 .searchBar {
   width: 100%;
   position: absolute;
@@ -301,23 +329,6 @@ body.menu-hidden .visualization {
 .frontPage #footer {
   position: absolute;
   bottom: 0;
-}
-
-#airportName {
-  margin: 0 0 0 0;
-  width: 100%;
-  font-size: x-large;
-  font-weight: bold;
-}
-
-.flights path[mouseHighlight=false] {
-  stroke-width: 1;
-  stroke: blue;
-}
-
-.flights path[mouseHighlight=true] {
-  stroke-width: 1;
-  stroke: red;
 }
 
 #downloadButton {
