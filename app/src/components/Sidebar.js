@@ -30,12 +30,13 @@ class Sidebar extends Component {
     window.removeEventListener('hashchange', this.route);
   }
 
-  // componentDidUpdate(){
-  //   this.route();
-  // }
+  componentDidUpdate(){
+    this.route();
+  }
 
   routeToMainPage(){
     window.history.replaceState(null, '', window.location.pathname);
+    console.log("main");
     document.title = "USA airport visualization";
     this.checkedID.length = 0;
     // this.checkedID.push(-1);
@@ -50,7 +51,9 @@ class Sidebar extends Component {
       this.routeToMainPage();
     } else if(url.hash){
       const airport = url.hash.substring(1).replaceAll('+', ' ');
+      console.log(airport);
       if(this.state.airport === null || airport !== this.state.airport.name || this.state.edges === null){
+        console.log("inside ",airport);
         document.title = airport;
         let airportObject = this.airports.find(el => el.name === airport);
         let airportGraphObject = this.props.airports.find(el => el.code === airportObject.iata);
