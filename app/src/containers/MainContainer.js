@@ -17,6 +17,7 @@ class MainContainer extends Component {
       },
       flights: [],
       selectedAirport: -1,
+      title: "USA airport visualization",
     }
   }
 
@@ -72,12 +73,16 @@ class MainContainer extends Component {
     this.setState({selectedAirport : id});
   }
 
+  setTitle = (title) => {
+    this.props.setTitle(title);
+  }
+
   customForceUpdate = () => {
     this.forceUpdate();
   }
 
   render() {
-    const { projection, airportsData, flights, selectedFlights, selectedAirport } = this.state;
+    const { projection, airportsData, flights, selectedFlights, selectedAirport, title } = this.state;
     const  {airports } = airportsData;
     return (<div className="page">
       <USMap 
@@ -93,7 +98,8 @@ class MainContainer extends Component {
           flights={flights} 
           setReferences={this.setReferences} 
           setAirportID={this.setAirportID} 
-          update={this.customForceUpdate} 
+          update={this.customForceUpdate}
+          setTitle={this.setTitle}
         />
         <SidebarButton/>
       </div>

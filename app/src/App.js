@@ -4,12 +4,22 @@ import Navbar from "./components/Navbar";
 import MainContainer from "./containers/MainContainer";
 
 class App extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { title: "USA airport visualization" };
+  }
+
+  setTitle = (title) => {
+    document.title = title;
+    this.setState({title: title});
+  }
+
   render() {
     return (
       <BrowserRouter>
-        <Navbar />
+        <Navbar title={this.state.title}/>
         <Routes>
-          <Route path="/" element={<MainContainer />} />
+          <Route path="/" element={<MainContainer setTitle={this.setTitle}/>} />
         </Routes>
       </BrowserRouter>
     );

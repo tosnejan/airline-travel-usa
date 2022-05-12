@@ -37,7 +37,7 @@ class Sidebar extends Component {
   routeToMainPage(){
     window.history.replaceState(null, '', window.location.pathname);
     console.log("main");
-    document.title = "USA airport visualization";
+    this.props.setTitle("USA airport visualization");
     this.checkedID.length = 0;
     // this.checkedID.push(-1);
     this.currentAirportID = -1;
@@ -54,7 +54,7 @@ class Sidebar extends Component {
       console.log(airport);
       if(this.state.airport === null || airport !== this.state.airport.name || this.state.edges === null){
         console.log("inside ",airport);
-        document.title = airport;
+        this.props.setTitle(airport);
         let airportObject = this.airports.find(el => el.name === airport);
         let airportGraphObject = this.props.airports.find(el => el.code === airportObject.iata);
         if (airportGraphObject) {

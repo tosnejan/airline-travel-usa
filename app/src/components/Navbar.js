@@ -22,7 +22,8 @@ class Navbar extends Component {
         <img id="airplane" src="https://cdn-icons-png.flaticon.com/512/31/31069.png" alt="airplane"/>
       </div>
       <p id="navbarTitle">{document.title}</p>
-      <MyButton text="Download"></MyButton>
+      <div></div>
+      {/* <MyButton text="Download"></MyButton> */}
     </div>;
   }
 }
