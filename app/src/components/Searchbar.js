@@ -115,13 +115,6 @@ class Searchbar extends Component {
 					this.setState({inputValue: val, active: false});
 					window.location.hash = val.replaceAll(' ', '+');
 					this.inp.value = val;
-	
-					// if ('URLSearchParams' in window) {
-					// 	var searchParams = new URLSearchParams(window.location.search);
-					// 	searchParams.set("airport", val);
-					// 	var newRelativePathQuery = window.location.pathname + '?' + searchParams.toString();
-					// 	window.history.pushState(null, '', newRelativePathQuery);
-					// }
 				});
 			}
 		}

@@ -2,11 +2,11 @@ import React from "react";
 import * as d3 from "d3";
 import us from "../data/us.json";
 import dataFile from "../data/airports.json";
-import { difference, dot, size } from "../utils";
 
 const MAP = "us-states"
 const AIRPORTS = "airports"
 const FLIGHTS = "flights"
+const YOU = "you"
 
 class USMap extends React.Component {
   constructor(props) {
@@ -57,12 +57,6 @@ class USMap extends React.Component {
       })
       .attr("focused", true)
       .raise()
-      /* .style("stroke", (d) => {
-        const dir = difference(airports[d.A].pos, airports[d.B].pos)
-        const i = (1 + dot(dir , [1, 0])/size(dir))/2
-        d.color = d3.interpolateCool(1-Math.abs(i))
-        return d.color
-      }); */
 
     for (let i = 0; i < airports.length; i++) {
       const airport = airports[i]
@@ -90,9 +84,28 @@ class USMap extends React.Component {
         this.setState({ hovered: -1 })
       }).on("click", (e) => {
         let name = e.target.firstChild.textContent;
-        window.location.hash = name.replaceAll(' ', '+');
+        if(window.location.hash === `#${name.replaceAll(' ', '+')}`){
+          window.location.hash = 'main';
+        } else {
+          window.location.hash = name.replaceAll(' ', '+');
+        }
       })
-      .append("title").text((d) => this.airportsInfo.find(el => el.iata === d.code).name);
+      .filter("circle:empty")
+      .append("title").text((d) => this.airportsInfo.find(el => el.iata === d.code).name)
+
+    if(this.props.coords){
+      let coords = this.props.projection([this.props.coords.longitude, this.props.coords.latitude]);
+      d3.select(`#${YOU}`)
+        .selectAll("circle")
+        .data([coords])
+        .join("circle")
+        .attr("r", (d) => 5)
+        .attr("cx", (d) => d[0])
+        .attr("cy", (d) => d[1])
+        .filter("circle:empty")
+        .append("title").text("Your position");
+    }
+
   }
 
   componentDidMount() {
@@ -109,6 +122,7 @@ class USMap extends React.Component {
     const airData = root.append("g").attr("id", "air-travel")
     airData.append("g").attr("id", FLIGHTS).classed("flights", true);
     airData.append("g").attr("id", AIRPORTS).classed("airports", true);
+    root.append("g").attr("id", YOU).classed("you", true);
 
     this.drawUSMap()
     this.drawFlightGraph()

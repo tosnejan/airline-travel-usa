@@ -1,7 +1,10 @@
 import { Component } from "react";
-import MyButton from "./Button";
 
 class Navbar extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { locationText: "getting location" };
+  }
   componentDidMount() {
     window.addEventListener('popstate', e => {
       this.forceUpdate();
@@ -12,18 +15,21 @@ class Navbar extends Component {
     let img = document.getElementById("airplane");
     img.addEventListener('click', e => {
       window.location.hash = 'main';
-      // window.history.replaceState(null, '', window.location.pathname);
     });
-	}
+	}  
 
   render() {
+    let locationText = "getting location";
+    if (this.props.coords !== null){
+      locationText = `Coordinations: ${this.props.coords.latitude} ${this.props.coords.longitude}`;
+      // locationText = `Latitude : ${this.props.coords.latitude} Longitude: ${this.props.coords.longitude}`;
+    }
     return <div className="navbar">
       <div id="airplaneDiv">
         <img id="airplane" src="https://cdn-icons-png.flaticon.com/512/31/31069.png" alt="airplane"/>
       </div>
-      <p id="navbarTitle">{document.title}</p>
-      <div></div>
-      {/* <MyButton text="Download"></MyButton> */}
+      <p id="location">{locationText}</p>
+      <p id="navbarTitle">{this.props.title}</p>
     </div>;
   }
 }

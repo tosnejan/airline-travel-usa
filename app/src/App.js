@@ -6,7 +6,8 @@ import MainContainer from "./containers/MainContainer";
 class App extends Component {
   constructor(props) {
     super(props);
-    this.state = { title: "USA airport visualization" };
+    this.state = { title: "USA airport visualization", coords: null};
+    this.watchID = null;
   }
 
   setTitle = (title) => {
@@ -14,12 +15,28 @@ class App extends Component {
     this.setState({title: title});
   }
 
+  success(pos) {
+    this.setState({coords: pos.coords})
+  }
+  
+  error(err) {
+    console.warn(`ERROR(${err.code}): ${err.message}`);
+  }
+
+  componentDidMount(){
+    if(this.watchID === null)this.watchID = navigator.geolocation.getCurrentPosition(this.success.bind(this), this.error);
+  }
+
+  componentWillUnmount(){
+    if(this.watchID !== null) navigator.geolocation.clearWatch(this.watchID);
+  }
+
   render() {
     return (
       <BrowserRouter>
-        <Navbar title={this.state.title}/>
+        <Navbar title={this.state.title} coords={this.state.coords}/>
         <Routes>
-          <Route path="/" element={<MainContainer setTitle={this.setTitle}/>} />
+          <Route path="/" element={<MainContainer setTitle={this.setTitle} coords={this.state.coords}/>} />
         </Routes>
       </BrowserRouter>
     );

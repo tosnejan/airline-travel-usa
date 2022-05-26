@@ -17,6 +17,7 @@ class Sidebar extends Component {
 			}
 		}
     this.props.setReferences(this.checkedID, this.currentAirportID);
+    this.lastHash = undefined;
   }
 
   componentDidMount() {
@@ -36,10 +37,8 @@ class Sidebar extends Component {
 
   routeToMainPage(){
     window.history.replaceState(null, '', window.location.pathname);
-    console.log("main");
     this.props.setTitle("USA airport visualization");
     this.checkedID.length = 0;
-    // this.checkedID.push(-1);
     this.currentAirportID = -1;
     this.setState({airport : null, edges : null});
     this.props.setAirportID(this.currentAirportID);
@@ -47,13 +46,12 @@ class Sidebar extends Component {
 
   route(e) {
     const url = new URL(window.location.href);
+    this.lastHash = url.hash;
     if(url.hash === "#main"){
       this.routeToMainPage();
     } else if(url.hash){
       const airport = url.hash.substring(1).replaceAll('+', ' ');
-      console.log(airport);
       if(this.state.airport === null || airport !== this.state.airport.name || this.state.edges === null){
-        console.log("inside ",airport);
         this.props.setTitle(airport);
         let airportObject = this.airports.find(el => el.name === airport);
         let airportGraphObject = this.props.airports.find(el => el.code === airportObject.iata);
@@ -63,8 +61,13 @@ class Sidebar extends Component {
           let connections = this.props.flights.filter(el => el.A === id || el.B === id);
           let cities = [];
           let checked = [];
-          this.checkedID.length = 0;
-          this.indexToID.length = 0;
+          this.checkedID.splice(0, this.checkedID.length);
+          this.indexToID.splice(0, this.indexToID.length);
+          let stored = localStorage.getItem(airportObject.iata);
+          if(stored !== null){
+            stored = JSON.parse(stored);
+          }
+          let j = 0;
           for (let i = 0; i < connections.length; i++) {
             const element = connections[i];
             let a = 0;
@@ -74,9 +77,11 @@ class Sidebar extends Component {
             let c = this.airports.find(el => el.iata === b.code);
             if(c && !cities.includes(c.name)) {
               cities.push(c.name);
-              checked.push(true);
-              this.checkedID.push(element);
+              if(stored) checked.push(stored[j]);
+              else checked.push(true);
+              if (checked[j]) this.checkedID.push(element);
               this.indexToID.push(element);
+              j++;
             }
           }
           this.setState({airport : airportObject, edges : cities, checked : checked});
@@ -97,6 +102,7 @@ class Sidebar extends Component {
     let checked = this.state.checked;
     
     checked[id] = !this.state.checked[id];
+    localStorage.setItem(this.state.airport.iata, JSON.stringify(checked));
     this.setState({checked : checked});
     if(checked[id]){
       this.checkedID.push(this.indexToID[id]);
@@ -108,6 +114,19 @@ class Sidebar extends Component {
     }
     this.props.update();
   }
+
+  changeAll(val){
+    console.log(val);
+    let checked = this.state.checked;
+    this.checkedID.length = 0;
+		for (let i = 0; i < this.state.checked.length; i++) {
+      checked[i] = val;
+      if(val) this.checkedID.push(this.indexToID[i]);
+    }
+    localStorage.setItem(this.state.airport.iata, JSON.stringify(checked));
+    this.setState({checked : checked});
+    this.props.update();
+  }  
 
   renderInfo(){
     if(this.state.airport === null) return;
@@ -121,14 +140,31 @@ class Sidebar extends Component {
     )
   }
 
+  renderToggle(){
+    if(this.state.edges === null || this.state.edges === undefined) return;
+    const unchecked = this.state.checked.filter(e => !e);
+    let checked = false;
+    if(unchecked.length === 0) {
+      checked = true;
+      localStorage.removeItem(this.state.airport.iata);
+    }
+    return (<div className="toggle">
+              <label className="container">
+                {"Toggle all"}
+                <input className="checkbox" type="checkbox" checked={checked} onChange={(e) => this.changeAll(e.target.checked)}></input>
+                <span className="checkmark all"></span>
+              </label> 
+            </div>)
+  }
+
   renderScroll(){
     if(this.state.edges === null || this.state.edges === undefined) return (
       <div className="frontPage">
-        <p>{"Routes connected to an airport can be highlighted by hovering over it or by searching it."}</p>
-        <p>{"You can select the airport by clicking on it or you can use the search bar."}</p>
+        <p>{"Routes connected to airport can be highlighted by selecting it. You can select the airport by clicking on it or you can use the search bar."}</p>
         <p>{`When you hover over some airport, it will highlight routes that are highlighted at the time and are connected to this airport. 
             This functionality can be used for highlighting routes between two airports by searching the first one and hovering over the second one.`}</p>
         <p>{"When you have some airport selected, you can modify what connections you want to see in this sidebar."}</p>
+        <p>{"The airport can be unselected by clicking on it again or by clicking on an airplane in top left corner."}</p>
         <p id="footer">{"Made by Jan Tošner and Jakub Peleška."}</p>
       </div>);
 		let arr = [];
@@ -150,7 +186,8 @@ class Sidebar extends Component {
   render() {
     return <div className="sidebar">
       <Searchbar/>
-      {this.renderInfo()}  
+      {this.renderInfo()} 
+      {this.renderToggle()}
       {this.renderScroll()}  
     </div>;
   }

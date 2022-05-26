@@ -91,6 +91,7 @@ class MainContainer extends Component {
         flights={flights} 
         selectedFlights={selectedFlights} 
         selectedAirport={selectedAirport}
+        coords={this.props.coords}
       />
       <div className="sidebarCompact">
         <Sidebar 
