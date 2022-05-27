@@ -7,7 +7,6 @@ class Searchbar extends Component {
 		this.airports = []
 		this.airportNames = []
 		this.changed = false;
-		this.parseAirportData(props.airports);
 	}
 
 	parseAirportData(data){
@@ -24,7 +23,6 @@ class Searchbar extends Component {
 
 		for (let i = 0; i < data.length; i++) {
 		  const airport = data[i]
-		  console.log(airport);
 		  if(iatas[airport.code] !== null){
 			  this.airportNames.push(iatas[airport.code].name)
 		  }
@@ -100,6 +98,7 @@ class Searchbar extends Component {
 	}
 
 	componentDidUpdate(){
+		if(this.airportNames.length === 0 && this.props.airports) this.parseAirportData(this.props.airports);
 		if(this.changed){
 			this.changed = false;
 			let items = document.getElementsByClassName("autocomplete-item");
