@@ -1,8 +1,8 @@
 {
   "name": "airline-travel-usa",
   "version": "0.1.0",
-  "homepage": "https://pelesjak.pages.fel.cvut.cz/airline-travel-usa/",
   "private": true,
+  "homepage": "https://pelesjak.pages.fel.cvut.cz/airline-travel-usa/",
   "dependencies": {
     "d3": "^7.3.0",
     "react": "^17.0.2",
