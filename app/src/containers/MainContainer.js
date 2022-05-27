@@ -82,7 +82,7 @@ class MainContainer extends Component {
 
   render() {
     const { projection, airportsData, flights, selectedFlights, selectedAirport } = this.state;
-    const  {airports } = airportsData;
+    const  { airports } = airportsData;
     return (<div className="page">
       <USMap 
         projection={projection} 

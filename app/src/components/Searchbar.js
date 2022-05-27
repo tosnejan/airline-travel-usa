@@ -3,19 +3,14 @@ import { Component } from "react";
 class Searchbar extends Component {
 	constructor(props){
 		super(props);
-		fetch("/airlines.graphml").then(this.parseAirportData);
 		this.state = {inputValue : "", active : false}
 		this.airports = []
 		this.airportNames = []
 		this.changed = false;
+		this.parseAirportData(props.airports);
 	}
 
-	parseAirportData = async (data) => {
-		const airtravel = await data.text()
-		const parser = new DOMParser();
-		const airtravelDoc = parser.parseFromString(airtravel, "text/xml")
-		const airportsElements = airtravelDoc.getElementsByTagName("node")
-
+	parseAirportData(data){
 		let dataFile = require('../data/airports.json');
 
 		let iatas = {};
@@ -27,11 +22,11 @@ class Searchbar extends Component {
 			}
 		}
 
-		for (let i = 0; i < airportsElements.length; i++) {
-		  const airport = airportsElements[i]
-		  const code = airport.querySelector('[key="tooltip"]').innerHTML.substring(0,3)
-		  if(iatas[code] !== null){
-			  this.airportNames.push(iatas[code].name)
+		for (let i = 0; i < data.length; i++) {
+		  const airport = data[i]
+		  console.log(airport);
+		  if(iatas[airport.code] !== null){
+			  this.airportNames.push(iatas[airport.code].name)
 		  }
 		}
 	}

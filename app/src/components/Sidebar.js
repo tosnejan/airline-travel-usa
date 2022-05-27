@@ -185,7 +185,7 @@ class Sidebar extends Component {
 
   render() {
     return <div className="sidebar">
-      <Searchbar/>
+      <Searchbar airports={this.props.airports}/>
       {this.renderInfo()} 
       {this.renderToggle()}
       {this.renderScroll()}  
