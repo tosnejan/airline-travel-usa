@@ -36,7 +36,7 @@ class App extends Component {
       <BrowserRouter>
         <Navbar title={this.state.title} coords={this.state.coords}/>
         <Routes>
-          <Route path="/" element={<MainContainer setTitle={this.setTitle} coords={this.state.coords}/>} />
+          <Route path="/airline-travel-usa/" element={<MainContainer setTitle={this.setTitle} coords={this.state.coords}/>} />
         </Routes>
       </BrowserRouter>
     );

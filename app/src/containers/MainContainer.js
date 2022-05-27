@@ -17,7 +17,6 @@ class MainContainer extends Component {
       },
       flights: [],
       selectedAirport: -1,
-      title: "USA airport visualization",
     }
   }
 
@@ -82,7 +81,7 @@ class MainContainer extends Component {
   }
 
   render() {
-    const { projection, airportsData, flights, selectedFlights, selectedAirport, title } = this.state;
+    const { projection, airportsData, flights, selectedFlights, selectedAirport } = this.state;
     const  {airports } = airportsData;
     return (<div className="page">
       <USMap 
